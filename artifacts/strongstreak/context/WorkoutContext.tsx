@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from "react";
+import React, { createContext, useContext, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export interface Exercise {
@@ -179,7 +179,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       if (logsRaw) setWorkoutLogs(JSON.parse(logsRaw));
       if (weightRaw) setWeightEntries(JSON.parse(weightRaw));
       if (unitRaw) setWeightUnitState(unitRaw as "kg" | "lbs");
-    } catch (e) {
+    } catch {
     } finally {
       setIsLoaded(true);
     }
@@ -266,16 +266,14 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addWeightEntry = async (entry: Omit<WeightEntry, "id">) => {
-    const newEntry: WeightEntry = { ...entry, id: generateId() };
-    const updated = [newEntry, ...weightEntries].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    const newEntry = { ...entry, id: generateId() };
+    const updated = [...weightEntries, newEntry];
     setWeightEntries(updated);
     await saveWeightEntries(updated);
   };
 
   const deleteWeightEntry = async (id: string) => {
-    const updated = weightEntries.filter((e) => e.id !== id);
+    const updated = weightEntries.filter((entry) => entry.id !== id);
     setWeightEntries(updated);
     await saveWeightEntries(updated);
   };
@@ -288,35 +286,35 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const { streak, longestStreak } = calculateStreaks(workoutLogs);
 
   return (
-    <WorkoutContext.Provider
-      value={{
-        splits,
-        workoutLogs,
-        weightEntries,
-        activeWorkout,
-        isLoaded,
-        addSplit,
-        updateSplit,
-        deleteSplit,
-        startWorkout,
-        logSet,
-        finishWorkout,
-        cancelWorkout,
-        addWeightEntry,
-        deleteWeightEntry,
-        weightUnit,
-        setWeightUnit,
-        streak,
-        longestStreak,
-      }}
-    >
+    <WorkoutContext.Provider value={{
+      splits,
+      workoutLogs,
+      weightEntries,
+      activeWorkout,
+      isLoaded,
+      addSplit,
+      updateSplit,
+      deleteSplit,
+      startWorkout,
+      logSet,
+      finishWorkout,
+      cancelWorkout,
+      addWeightEntry,
+      deleteWeightEntry,
+      weightUnit,
+      setWeightUnit,
+      streak,
+      longestStreak,
+    }}>
       {children}
     </WorkoutContext.Provider>
   );
 }
 
 export function useWorkout() {
-  const ctx = useContext(WorkoutContext);
-  if (!ctx) throw new Error("useWorkout must be used within WorkoutProvider");
-  return ctx;
+  const context = useContext(WorkoutContext);
+  if (!context) {
+    throw new Error("useWorkout must be used within a WorkoutProvider");
+  }
+  return context;
 }

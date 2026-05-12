@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Platform, RefreshControl,
+  Platform, RefreshControl, Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -63,7 +63,7 @@ function DayCard({ day, onStart }: { day: SplitDay; onStart: () => void }) {
   );
 }
 
-function SplitCard({ split, onExport }: { split: Split; onExport: () => void }) {
+function SplitCard({ split, onExport, onDelete }: { split: Split; onExport: () => void; onDelete: () => void }) {
   const colors = useColors();
   const { startWorkout } = useWorkout();
 
@@ -78,6 +78,9 @@ function SplitCard({ split, onExport }: { split: Split; onExport: () => void }) 
       <View style={styles.splitCardHeader}>
         <Text style={[styles.splitName, { color: colors.foreground }]}>{split.name}</Text>
         <View style={styles.splitCardActions}>
+          <TouchableOpacity onPress={onDelete} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons name="trash-outline" size={18} color={colors.mutedForeground} />
+          </TouchableOpacity>
           <TouchableOpacity onPress={onExport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons name="share-outline" size={18} color={colors.mutedForeground} />
           </TouchableOpacity>
@@ -101,7 +104,7 @@ function SplitCard({ split, onExport }: { split: Split; onExport: () => void }) 
 export default function WorkoutsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { splits, streak, longestStreak, activeWorkout } = useWorkout();
+  const { splits, streak, longestStreak, activeWorkout, deleteSplit } = useWorkout();
   const [refreshing, setRefreshing] = useState(false);
   const [importExportVisible, setImportExportVisible] = useState(false);
   const [exportSplit, setExportSplit] = useState<Split | undefined>(undefined);
@@ -117,6 +120,23 @@ export default function WorkoutsScreen() {
   const openImport = () => {
     setExportSplit(undefined);
     setImportExportVisible(true);
+  };
+
+  const confirmDelete = (split: Split) => {
+    Alert.alert(
+      "Delete split?",
+      `This will permanently delete \"${split.name}\".`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            await deleteSplit(split.id);
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -193,6 +213,7 @@ export default function WorkoutsScreen() {
               key={split.id}
               split={split}
               onExport={() => { setExportSplit(split); setImportExportVisible(true); }}
+              onDelete={() => confirmDelete(split)}
             />
           ))
         )}
