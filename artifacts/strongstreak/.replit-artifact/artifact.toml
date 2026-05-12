@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "StrongStreak"
+version = "1.0.0"
+id = "artifacts/strongstreak"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 22618
+
+[services.development]
+run = "pnpm --filter @workspace/strongstreak run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/strongstreak", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/strongstreak", "run", "serve" ]
+
+[services.env]
+PORT = "22618"
+BASE_PATH = "/"
