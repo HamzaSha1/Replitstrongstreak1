@@ -82,12 +82,23 @@ export default function SplitImportExport({ visible, onClose, splitToExport }: P
     try {
       const json = JSON.stringify(splitToExport, null, 2);
       const fileName = `${splitToExport.name.replace(/\s+/g, "_")}_split.json`;
-      const uri = FileSystem.documentDirectory + fileName;
-      await FileSystem.writeAsStringAsync(uri, json, { encoding: FileSystem.EncodingType.UTF8 });
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: "application/json", dialogTitle: "Export Split" });
+
+      if (Platform.OS === "web") {
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
       } else {
-        Alert.alert("Exported", `Split saved to: ${uri}`);
+        const uri = FileSystem.documentDirectory + fileName;
+        await FileSystem.writeAsStringAsync(uri, json, { encoding: FileSystem.EncodingType.UTF8 });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(uri, { mimeType: "application/json", dialogTitle: "Export Split" });
+        } else {
+          Alert.alert("Exported", `Split saved to: ${uri}`);
+        }
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e: any) {
@@ -95,19 +106,48 @@ export default function SplitImportExport({ visible, onClose, splitToExport }: P
     }
   };
 
+  const readFileContentWeb = (): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".json,application/json,text/plain";
+      input.onchange = () => {
+        const file = input.files?.[0];
+        if (!file) return reject(new Error("No file selected"));
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsText(file);
+      };
+      input.oncancel = () => reject(new Error("cancelled"));
+      input.click();
+    });
+
   const handleImportJson = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ["application/json", "text/plain", "*/*"],
-        copyToCacheDirectory: true,
-      });
+      let content: string;
 
-      if (result.canceled) return;
+      if (Platform.OS === "web") {
+        try {
+          content = await readFileContentWeb();
+        } catch (e: any) {
+          if (e.message === "cancelled") return;
+          Alert.alert("Import failed", e.message);
+          return;
+        }
+      } else {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: ["application/json", "text/plain", "*/*"],
+          copyToCacheDirectory: true,
+        });
 
-      const file = result.assets[0];
-      const content = await FileSystem.readAsStringAsync(file.uri, {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
+        if (result.canceled) return;
+
+        const file = result.assets[0];
+        content = await FileSystem.readAsStringAsync(file.uri, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+      }
 
       let parsed: any;
       try {
