@@ -22,29 +22,30 @@ function generateId() {
 
 function normalizeSplit(raw: any): Omit<Split, "id" | "createdAt"> {
   const days = DAYS.map((dayName) => {
-    const found = (raw.days ?? []).find(
-      (d: any) => d.dayOfWeek?.toLowerCase() === dayName.toLowerCase()
-    );
+    const found = (raw.days ?? []).find((d: any) => {
+      const dow = d.dayOfWeek ?? d.day_of_week ?? "";
+      return dow.toLowerCase() === dayName.toLowerCase();
+    });
     return {
       id: generateId(),
       dayOfWeek: dayName,
-      sessionType: found?.sessionType ?? "Rest",
+      sessionType: found?.sessionType ?? found?.session_type ?? "Rest",
       exercises: (found?.exercises ?? []).map((ex: any) => ({
         id: generateId(),
         name: ex.name ?? "Unknown Exercise",
-        muscleGroup: ex.muscleGroup ?? "Other",
-        sets: Number(ex.sets) || 3,
-        reps: String(ex.reps || "10"),
+        muscleGroup: ex.muscleGroup ?? ex.muscle_group ?? "Other",
+        sets: Number(ex.sets ?? ex.target_sets) || 3,
+        reps: String(ex.reps ?? ex.target_reps ?? "10"),
         weight: Number(ex.weight) || 0,
         unit: (ex.unit === "lbs" ? "lbs" : "kg") as "kg" | "lbs",
-        restSeconds: Number(ex.restSeconds) || 90,
+        restSeconds: Number(ex.restSeconds ?? ex.rest_seconds) || 90,
         notes: ex.notes ?? "",
-        type: (ex.type === "cardio" ? "cardio" : "strength") as "strength" | "cardio",
+        type: ((ex.type ?? ex.exercise_type) === "cardio" ? "cardio" : "strength") as "strength" | "cardio",
       })),
     };
   });
 
-  return { name: raw.name ?? "Imported Split", days };
+  return { name: raw.name ?? raw.split_name ?? "Imported Split", days };
 }
 
 interface Props {
