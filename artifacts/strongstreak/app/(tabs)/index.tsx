@@ -11,6 +11,7 @@ import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { SESSION_COLORS, SESSION_TYPES, DAYS } from "@/components/ExerciseData";
 import type { Split, SplitDay } from "@/context/WorkoutContext";
+import SplitImportExport from "@/components/SplitImportExport";
 
 function SessionTypePill({ type }: { type: string }) {
   const colors = useColors();
@@ -62,7 +63,7 @@ function DayCard({ day, split, onStart }: { day: SplitDay; split: Split; onStart
   );
 }
 
-function SplitCard({ split }: { split: Split }) {
+function SplitCard({ split, onExport }: { split: Split; onExport: () => void }) {
   const colors = useColors();
   const { startWorkout } = useWorkout();
 
@@ -76,11 +77,17 @@ function SplitCard({ split }: { split: Split }) {
     <View style={[styles.splitCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.splitCardHeader}>
         <Text style={[styles.splitName, { color: colors.foreground }]}>{split.name}</Text>
-        <TouchableOpacity
-          onPress={() => router.push({ pathname: "/split-builder", params: { splitId: split.id } })}
-        >
-          <Ionicons name="pencil" size={18} color={colors.mutedForeground} />
-        </TouchableOpacity>
+        <View style={styles.splitCardActions}>
+          <TouchableOpacity onPress={onExport} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons name="share-outline" size={18} color={colors.mutedForeground} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push({ pathname: "/split-builder", params: { splitId: split.id } })}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="pencil" size={18} color={colors.mutedForeground} />
+          </TouchableOpacity>
+        </View>
       </View>
       <View style={styles.daysList}>
         {split.days.map((day) => (
@@ -96,6 +103,8 @@ export default function WorkoutsScreen() {
   const insets = useSafeAreaInsets();
   const { splits, streak, longestStreak, activeWorkout } = useWorkout();
   const [refreshing, setRefreshing] = useState(false);
+  const [importExportVisible, setImportExportVisible] = useState(false);
+  const [exportSplit, setExportSplit] = useState<Split | undefined>(undefined);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -103,6 +112,11 @@ export default function WorkoutsScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 800);
+  };
+
+  const openImport = () => {
+    setExportSplit(undefined);
+    setImportExportVisible(true);
   };
 
   return (
@@ -119,6 +133,13 @@ export default function WorkoutsScreen() {
             <Ionicons name="flame" size={16} color="#F97316" />
             <Text style={[styles.streakCount, { color: colors.foreground }]}>{streak}</Text>
           </View>
+          <TouchableOpacity
+            style={[styles.importBtn, { backgroundColor: colors.muted, borderColor: colors.border }]}
+            onPress={openImport}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="arrow-down-circle-outline" size={20} color={colors.foreground} />
+          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.addBtn, { backgroundColor: colors.primary }]}
             onPress={() => {
@@ -171,7 +192,13 @@ export default function WorkoutsScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          splits.map((split) => <SplitCard key={split.id} split={split} />)
+          splits.map((split) => (
+            <SplitCard
+              key={split.id}
+              split={split}
+              onExport={() => { setExportSplit(split); setImportExportVisible(true); }}
+            />
+          ))
         )}
 
         <View style={[styles.statsRow]}>
@@ -187,6 +214,12 @@ export default function WorkoutsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <SplitImportExport
+        visible={importExportVisible}
+        onClose={() => setImportExportVisible(false)}
+        splitToExport={exportSplit}
+      />
     </View>
   );
 }
@@ -209,6 +242,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 6, borderRadius: 100, borderWidth: 1,
   },
   streakCount: { fontSize: 15, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  importBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", borderWidth: 1 },
   addBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   activeWorkoutBanner: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
@@ -224,7 +258,8 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  splitName: { fontSize: 17, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  splitName: { fontSize: 17, fontWeight: "700", fontFamily: "Inter_700Bold", flex: 1 },
+  splitCardActions: { flexDirection: "row", alignItems: "center", gap: 14 },
   daysList: { padding: 10, gap: 8 },
   dayCard: {
     borderRadius: 12, borderWidth: 1, overflow: "hidden",
