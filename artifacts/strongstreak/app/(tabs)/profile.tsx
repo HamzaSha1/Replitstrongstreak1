@@ -15,10 +15,12 @@ function EditProfileModal({ visible, onClose }: { visible: boolean; onClose: () 
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { myProfile, updateProfile } = useSocial();
-  const [displayName, setDisplayName] = useState(myProfile.displayName);
-  const [handle, setHandle] = useState(myProfile.handle);
-  const [bio, setBio] = useState(myProfile.bio);
-  const [isPrivate, setIsPrivate] = useState(myProfile.isPrivate);
+  const [displayName, setDisplayName] = useState(myProfile?.displayName ?? "");
+  const [handle, setHandle] = useState(myProfile?.handle ?? "");
+  const [bio, setBio] = useState(myProfile?.bio ?? "");
+  const [isPrivate, setIsPrivate] = useState(myProfile?.isPrivate ?? false);
+
+  if (!myProfile) return null;
 
   const handleSave = async () => {
     await updateProfile({ displayName, handle: handle.replace("@", ""), bio, isPrivate });
@@ -102,6 +104,8 @@ export default function ProfileScreen() {
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
+
+  if (!myProfile) return null;
 
   const initials = myProfile.displayName
     .split(" ")
