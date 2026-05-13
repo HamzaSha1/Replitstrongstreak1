@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity, Animated,
-  TouchableWithoutFeedback,
+  TouchableWithoutFeedback, PanResponder,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import * as Haptics from "expo-haptics";
-import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
-export type GameType = "snake" | "flappy" | "breathing";
+export type GameType = "snake" | "breathing";
 
 export interface RestNotification {
   emoji: string;
@@ -21,8 +20,8 @@ export interface RestNotification {
 
 // ─── Ring constants ───────────────────────────────────────────────────────────
 
-const RING_R = 68;
-const RING_SW = 8;
+const RING_R = 92;
+const RING_SW = 10;
 const RING_SIZE = (RING_R + RING_SW) * 2;
 const CIRCUMFERENCE = 2 * Math.PI * RING_R;
 
@@ -35,9 +34,7 @@ function NotificationCard({ notification }: { notification: RestNotification }) 
 
   useEffect(() => {
     Animated.parallel([
-      Animated.spring(translateY, {
-        toValue: 0, useNativeDriver: true, tension: 60, friction: 10,
-      }),
+      Animated.spring(translateY, { toValue: 0, useNativeDriver: true, tension: 60, friction: 10 }),
       Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
     ]).start();
   }, []);
@@ -56,12 +53,8 @@ function NotificationCard({ notification }: { notification: RestNotification }) 
     >
       <Text style={styles.notifEmoji}>{notification.emoji}</Text>
       <View style={{ flex: 1 }}>
-        <Text style={[styles.notifTitle, { color: notification.color }]}>
-          {notification.title}
-        </Text>
-        <Text style={[styles.notifMsg, { color: colors.mutedForeground }]}>
-          {notification.message}
-        </Text>
+        <Text style={[styles.notifTitle, { color: notification.color }]}>{notification.title}</Text>
+        <Text style={[styles.notifMsg, { color: colors.mutedForeground }]}>{notification.message}</Text>
       </View>
     </Animated.View>
   );
@@ -70,8 +63,8 @@ function NotificationCard({ notification }: { notification: RestNotification }) 
 // ─── SnakeGame ────────────────────────────────────────────────────────────────
 
 const GRID = 14;
-const CELL = 16;
-const GAME_W = GRID * CELL; // 224
+const CELL = 18;
+const GAME_W = GRID * CELL; // 252
 
 type Pt = { x: number; y: number };
 
@@ -105,17 +98,13 @@ function SnakeGame({ active }: { active: boolean }) {
   };
 
   useEffect(() => {
-    if (!active) {
-      loopRef.current && clearInterval(loopRef.current);
-      return;
-    }
+    if (!active) { loopRef.current && clearInterval(loopRef.current); return; }
     reset();
     setTick((t) => t + 1);
 
     loopRef.current = setInterval(() => {
       if (!alive.current) return;
 
-      // Apply queued direction (prevent 180° reversal)
       const nd = nextDir.current;
       const cd = dir.current;
       if (!(nd.x === -cd.x && nd.y === -cd.y)) dir.current = nd;
@@ -149,7 +138,30 @@ function SnakeGame({ active }: { active: boolean }) {
     return () => { loopRef.current && clearInterval(loopRef.current); };
   }, [active]);
 
-  const setDir = (dx: number, dy: number) => { nextDir.current = { x: dx, y: dy }; };
+  // ── Swipe PanResponder ────────────────────────────────────────────────────
+  const swipePan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_, g) => {
+        // Tap on game-over screen → restart
+        if (!alive.current) {
+          reset();
+          setTick((t) => t + 1);
+          return;
+        }
+        const { dx, dy } = g;
+        // Ignore tiny movements (accidental taps)
+        if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+        if (Math.abs(dx) >= Math.abs(dy)) {
+          nextDir.current = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
+        } else {
+          nextDir.current = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
+        }
+      },
+    })
+  ).current;
 
   const snakePos = snake.current;
   const foodPos = food.current;
@@ -159,14 +171,16 @@ function SnakeGame({ active }: { active: boolean }) {
     <View style={styles.gameWrap}>
       <Text style={[styles.gameScore, { color: colors.primary }]}>🐍  Score: {score.current}</Text>
 
-      {/* Grid */}
-      <View style={[styles.snakeGrid, { width: GAME_W, height: GAME_W, backgroundColor: colors.muted + "50" }]}>
+      {/* Grid — swipe anywhere on it to steer */}
+      <View
+        style={[styles.snakeGrid, { width: GAME_W, height: GAME_W, backgroundColor: colors.muted + "50" }]}
+        {...swipePan.panHandlers}
+      >
         {/* Food */}
         <View
           style={{
             position: "absolute",
-            left: foodPos.x * CELL + 2,
-            top: foodPos.y * CELL + 2,
+            left: foodPos.x * CELL + 2, top: foodPos.y * CELL + 2,
             width: CELL - 4, height: CELL - 4,
             borderRadius: (CELL - 4) / 2,
             backgroundColor: "#FF6B6B",
@@ -178,218 +192,27 @@ function SnakeGame({ active }: { active: boolean }) {
             key={i}
             style={{
               position: "absolute",
-              left: seg.x * CELL + 1,
-              top: seg.y * CELL + 1,
+              left: seg.x * CELL + 1, top: seg.y * CELL + 1,
               width: CELL - 2, height: CELL - 2,
               borderRadius: i === 0 ? 5 : 3,
               backgroundColor: i === 0 ? colors.primary : colors.primary + "99",
             }}
           />
         ))}
-        {/* Game over overlay */}
+        {/* Game over overlay (non-interactive — tap handled by PanResponder above) */}
         {!isAlive && (
-          <TouchableOpacity
+          <View
             style={[StyleSheet.absoluteFillObject, styles.gameOver, { backgroundColor: "rgba(0,0,0,0.72)" }]}
-            onPress={() => { reset(); setTick((t) => t + 1); }}
+            pointerEvents="none"
           >
             <Text style={styles.gameOverText}>💀 Game Over</Text>
             <Text style={styles.gameOverSub}>Score: {score.current}</Text>
             <Text style={styles.gameOverSub}>Tap to restart</Text>
-          </TouchableOpacity>
+          </View>
         )}
       </View>
 
-      {/* D-pad */}
-      <View style={styles.dpad}>
-        <TouchableOpacity style={styles.dpadBtn} onPress={() => setDir(0, -1)}>
-          <Ionicons name="chevron-up" size={22} color={colors.foreground} />
-        </TouchableOpacity>
-        <View style={styles.dpadRow}>
-          <TouchableOpacity style={styles.dpadBtn} onPress={() => setDir(-1, 0)}>
-            <Ionicons name="chevron-back" size={22} color={colors.foreground} />
-          </TouchableOpacity>
-          <View style={[styles.dpadCenter, { backgroundColor: colors.muted }]} />
-          <TouchableOpacity style={styles.dpadBtn} onPress={() => setDir(1, 0)}>
-            <Ionicons name="chevron-forward" size={22} color={colors.foreground} />
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity style={styles.dpadBtn} onPress={() => setDir(0, 1)}>
-          <Ionicons name="chevron-down" size={22} color={colors.foreground} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
-// ─── FlappyBirdGame ───────────────────────────────────────────────────────────
-
-const FB_W = GAME_W;
-const FB_H = 156;
-const BIRD_SZ = 22;
-const PIPE_W = 38;
-const PIPE_GAP = 66;
-const GRAVITY = 0.5;
-const FLAP_VEL = -9;
-const PIPE_SPEED = 2.5;
-const BIRD_X = 60;
-
-type Pipe = { x: number; gapY: number };
-
-function FlappyBirdGame({ active }: { active: boolean }) {
-  const colors = useColors();
-  const [, setTick] = useState(0);
-
-  const birdY = useRef(FB_H / 2 - BIRD_SZ / 2);
-  const birdVY = useRef(0);
-  const pipes = useRef<Pipe[]>([]);
-  const score = useRef(0);
-  const alive = useRef(true);
-  const started = useRef(false);
-  const loopRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const reset = () => {
-    birdY.current = FB_H / 2 - BIRD_SZ / 2;
-    birdVY.current = 0;
-    pipes.current = [{ x: FB_W + 30, gapY: 50 + Math.random() * (FB_H - PIPE_GAP - 80) }];
-    score.current = 0;
-    alive.current = true;
-    started.current = false;
-  };
-
-  useEffect(() => {
-    if (!active) {
-      loopRef.current && clearInterval(loopRef.current);
-      return;
-    }
-    reset();
-    setTick((t) => t + 1);
-
-    loopRef.current = setInterval(() => {
-      if (!alive.current || !started.current) { setTick((t) => t + 1); return; }
-
-      // Physics
-      birdVY.current += GRAVITY;
-      birdY.current += birdVY.current;
-
-      // Floor / ceiling
-      if (birdY.current < 0 || birdY.current + BIRD_SZ > FB_H) {
-        alive.current = false;
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        setTick((t) => t + 1);
-        return;
-      }
-
-      // Move + cull pipes
-      pipes.current = pipes.current
-        .map((p) => ({ ...p, x: p.x - PIPE_SPEED }))
-        .filter((p) => p.x + PIPE_W > 0);
-
-      // Spawn
-      if (!pipes.current.length || pipes.current[pipes.current.length - 1].x < FB_W - 150) {
-        pipes.current.push({
-          x: FB_W + 10,
-          gapY: 40 + Math.random() * (FB_H - PIPE_GAP - 70),
-        });
-      }
-
-      // Score
-      pipes.current.forEach((p) => {
-        if (p.x + PIPE_W < BIRD_X && p.x + PIPE_W >= BIRD_X - PIPE_SPEED) {
-          score.current++;
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-      });
-
-      // Collision
-      for (const p of pipes.current) {
-        if (BIRD_X + BIRD_SZ > p.x && BIRD_X < p.x + PIPE_W) {
-          if (birdY.current < p.gapY || birdY.current + BIRD_SZ > p.gapY + PIPE_GAP) {
-            alive.current = false;
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            break;
-          }
-        }
-      }
-
-      setTick((t) => t + 1);
-    }, 28);
-
-    return () => { loopRef.current && clearInterval(loopRef.current); };
-  }, [active]);
-
-  const handleFlap = () => {
-    if (!alive.current) { reset(); setTick((t) => t + 1); return; }
-    started.current = true;
-    birdVY.current = FLAP_VEL;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
-
-  return (
-    <View style={styles.gameWrap}>
-      <Text style={[styles.gameScore, { color: colors.primary }]}>🐦  Score: {score.current}</Text>
-      <TouchableWithoutFeedback onPress={handleFlap}>
-        <View
-          style={[
-            styles.flappyCanvas,
-            { width: FB_W, height: FB_H, backgroundColor: colors.muted + "50", overflow: "hidden" },
-          ]}
-        >
-          {/* Pipes */}
-          {pipes.current.map((pipe, i) => (
-            <React.Fragment key={i}>
-              <View
-                style={{
-                  position: "absolute",
-                  left: pipe.x, top: 0,
-                  width: PIPE_W, height: pipe.gapY,
-                  backgroundColor: colors.primary + "cc",
-                  borderBottomLeftRadius: 6, borderBottomRightRadius: 6,
-                }}
-              />
-              <View
-                style={{
-                  position: "absolute",
-                  left: pipe.x, top: pipe.gapY + PIPE_GAP,
-                  width: PIPE_W, height: FB_H - pipe.gapY - PIPE_GAP,
-                  backgroundColor: colors.primary + "cc",
-                  borderTopLeftRadius: 6, borderTopRightRadius: 6,
-                }}
-              />
-            </React.Fragment>
-          ))}
-          {/* Bird */}
-          <View
-            style={{
-              position: "absolute",
-              left: BIRD_X - BIRD_SZ / 2,
-              top: birdY.current,
-              width: BIRD_SZ, height: BIRD_SZ,
-              borderRadius: BIRD_SZ / 2,
-              backgroundColor: "#FFD700",
-              borderWidth: 2, borderColor: "#FF9F00",
-            }}
-          />
-          {/* Overlay */}
-          {(!alive.current || !started.current) && (
-            <View
-              style={[
-                StyleSheet.absoluteFillObject,
-                styles.gameOver,
-                { backgroundColor: "rgba(0,0,0,0.65)" },
-              ]}
-            >
-              <Text style={styles.gameOverText}>
-                {!alive.current ? "💀 Game Over" : "Tap to Start"}
-              </Text>
-              {!alive.current && <Text style={styles.gameOverSub}>Score: {score.current}</Text>}
-              <Text style={styles.gameOverSub}>
-                {!alive.current ? "Tap to restart" : "Tap anywhere"}
-              </Text>
-            </View>
-          )}
-        </View>
-      </TouchableWithoutFeedback>
-      <Text style={[styles.gameHint, { color: colors.mutedForeground }]}>Tap to flap 🐦</Text>
+      <Text style={[styles.gameHint, { color: colors.mutedForeground }]}>Swipe to steer 👆</Text>
     </View>
   );
 }
@@ -450,12 +273,11 @@ function BoxBreathingGame({ active }: { active: boolean }) {
     <View style={[styles.gameWrap, { alignItems: "center", paddingVertical: 20 }]}>
       <Text style={[styles.gameScore, { color: colors.primary, alignSelf: "center" }]}>🫁  Box Breathing</Text>
 
-      {/* Animated ring */}
-      <View style={{ width: 130, height: 130, alignItems: "center", justifyContent: "center", marginVertical: 12 }}>
+      <View style={{ width: 140, height: 140, alignItems: "center", justifyContent: "center", marginVertical: 12 }}>
         <Animated.View
           style={{
-            width: 110, height: 110,
-            borderRadius: 55,
+            width: 120, height: 120,
+            borderRadius: 60,
             backgroundColor: colors.primary + "28",
             borderWidth: 2, borderColor: colors.primary,
             transform: [{ scale }],
@@ -486,7 +308,6 @@ interface RestTimerModalProps {
 
 const GAME_TABS: { id: GameType; emoji: string; label: string }[] = [
   { id: "snake", emoji: "🐍", label: "Snake" },
-  { id: "flappy", emoji: "🐦", label: "Flappy" },
   { id: "breathing", emoji: "🫁", label: "Breathe" },
 ];
 
@@ -554,130 +375,126 @@ export default function RestTimerModal({
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
-        <View
-          style={[
-            styles.modal,
-            { backgroundColor: colors.card, borderColor: colors.border },
-            hasGame && { width: GAME_W + 32 },
-          ]}
-        >
-          {/* Notification card — slides in from above */}
-          {showNotif && notification && (
-            <NotificationCard key={notifKey.current} notification={notification} />
-          )}
 
-          {hasGame ? (
-            // ── Compact timer bar when a game is open ─────────────────────
-            <View style={[styles.compactBar, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.compactTime, { color: colors.foreground }]}>
-                {mins}:{secs.toString().padStart(2, "0")}
-              </Text>
-              <TouchableOpacity
-                style={[styles.compactAdj, { backgroundColor: colors.muted }]}
-                onPress={() => adjustTime(-10)}
-              >
-                <Text style={[styles.compactAdjText, { color: colors.foreground }]}>-10s</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.compactSkip, { backgroundColor: colors.muted }]}
-                onPress={onClose}
-              >
-                <Text style={[styles.compactSkipText, { color: colors.foreground }]}>Skip</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.compactAdj, { backgroundColor: colors.muted }]}
-                onPress={() => adjustTime(10)}
-              >
-                <Text style={[styles.compactAdjText, { color: colors.foreground }]}>+10s</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            // ── Full circular ring when no game is open ────────────────────
-            <View style={styles.ringWrap}>
-              <Text style={[styles.restLabel, { color: colors.mutedForeground }]}>REST</Text>
-              <View
-                style={{
-                  width: RING_SIZE, height: RING_SIZE,
-                  alignItems: "center", justifyContent: "center",
-                }}
-              >
-                <Svg width={RING_SIZE} height={RING_SIZE}>
-                  {/* Background track */}
-                  <Circle
-                    cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_R}
-                    stroke={colors.muted} strokeWidth={RING_SW} fill="none"
-                  />
-                  {/* Progress arc */}
-                  <Circle
-                    cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_R}
-                    stroke={colors.primary} strokeWidth={RING_SW} fill="none"
-                    strokeDasharray={`${CIRCUMFERENCE}`}
-                    strokeDashoffset={strokeOffset}
-                    strokeLinecap="round"
-                    transform={`rotate(-90, ${RING_SIZE / 2}, ${RING_SIZE / 2})`}
-                  />
-                </Svg>
-                <View
-                  style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center" }]}
-                  pointerEvents="none"
-                >
-                  <Text style={[styles.restTime, { color: colors.foreground }]}>
-                    {mins}:{secs.toString().padStart(2, "0")}
-                  </Text>
-                </View>
-              </View>
+        {/* ── Backdrop — tap anywhere outside box to dismiss ─────────────── */}
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={StyleSheet.absoluteFillObject} />
+        </TouchableWithoutFeedback>
 
-              {/* ±10s and skip */}
-              <View style={styles.adjRow}>
+        {/* ── Modal box — stops tap propagation to backdrop ─────────────── */}
+        <TouchableWithoutFeedback onPress={() => { /* absorb taps */ }}>
+          <View style={[styles.modal, { backgroundColor: colors.card, borderColor: colors.border }]}>
+
+            {/* Notification card */}
+            {showNotif && notification && (
+              <NotificationCard key={notifKey.current} notification={notification} />
+            )}
+
+            {hasGame ? (
+              // Compact timer bar
+              <View style={[styles.compactBar, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.compactTime, { color: colors.foreground }]}>
+                  {mins}:{secs.toString().padStart(2, "0")}
+                </Text>
                 <TouchableOpacity
-                  style={[styles.adjBtn, { backgroundColor: colors.muted }]}
+                  style={[styles.compactAdj, { backgroundColor: colors.muted }]}
                   onPress={() => adjustTime(-10)}
                 >
-                  <Text style={[styles.adjText, { color: colors.foreground }]}>-10s</Text>
+                  <Text style={[styles.compactAdjText, { color: colors.foreground }]}>-10s</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.skipBtn, { backgroundColor: colors.muted }]}
+                  style={[styles.compactSkip, { backgroundColor: colors.muted }]}
                   onPress={onClose}
                 >
-                  <Text style={[styles.skipText, { color: colors.foreground }]}>Skip Rest</Text>
+                  <Text style={[styles.compactSkipText, { color: colors.foreground }]}>Skip</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.adjBtn, { backgroundColor: colors.muted }]}
+                  style={[styles.compactAdj, { backgroundColor: colors.muted }]}
                   onPress={() => adjustTime(10)}
                 >
-                  <Text style={[styles.adjText, { color: colors.foreground }]}>+10s</Text>
+                  <Text style={[styles.compactAdjText, { color: colors.foreground }]}>+10s</Text>
                 </TouchableOpacity>
               </View>
+            ) : (
+              // Full ring
+              <View style={styles.ringWrap}>
+                <Text style={[styles.restLabel, { color: colors.mutedForeground }]}>REST</Text>
+                <View style={{ width: RING_SIZE, height: RING_SIZE, alignItems: "center", justifyContent: "center" }}>
+                  <Svg width={RING_SIZE} height={RING_SIZE}>
+                    <Circle
+                      cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_R}
+                      stroke={colors.muted} strokeWidth={RING_SW} fill="none"
+                    />
+                    <Circle
+                      cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_R}
+                      stroke={colors.primary} strokeWidth={RING_SW} fill="none"
+                      strokeDasharray={`${CIRCUMFERENCE}`}
+                      strokeDashoffset={strokeOffset}
+                      strokeLinecap="round"
+                      transform={`rotate(-90, ${RING_SIZE / 2}, ${RING_SIZE / 2})`}
+                    />
+                  </Svg>
+                  <View
+                    style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center" }]}
+                    pointerEvents="none"
+                  >
+                    <Text style={[styles.restTime, { color: colors.foreground }]}>
+                      {mins}:{secs.toString().padStart(2, "0")}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.adjRow}>
+                  <TouchableOpacity
+                    style={[styles.adjBtn, { backgroundColor: colors.muted }]}
+                    onPress={() => adjustTime(-10)}
+                  >
+                    <Text style={[styles.adjText, { color: colors.foreground }]}>-10s</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.skipBtn, { backgroundColor: colors.muted }]}
+                    onPress={onClose}
+                  >
+                    <Text style={[styles.skipText, { color: colors.foreground }]}>Skip Rest</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.adjBtn, { backgroundColor: colors.muted }]}
+                    onPress={() => adjustTime(10)}
+                  >
+                    <Text style={[styles.adjText, { color: colors.foreground }]}>+10s</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* Active game */}
+            {activeGame === "snake" && <SnakeGame active={visible && activeGame === "snake"} />}
+            {activeGame === "breathing" && <BoxBreathingGame active={visible && activeGame === "breathing"} />}
+
+            {/* Game tabs */}
+            <View style={[styles.gameTabs, { borderTopColor: colors.border }]}>
+              {GAME_TABS.map(({ id, emoji, label }) => (
+                <TouchableOpacity
+                  key={id}
+                  style={[
+                    styles.gameTab,
+                    {
+                      borderColor: activeGame === id ? colors.primary : colors.border,
+                      backgroundColor: activeGame === id ? colors.primary + "18" : "transparent",
+                    },
+                  ]}
+                  onPress={() => onGameChange?.(activeGame === id ? null : id)}
+                >
+                  <Text style={{ fontSize: 18 }}>{emoji}</Text>
+                  <Text style={[styles.gameTabLabel, { color: activeGame === id ? colors.primary : colors.mutedForeground }]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          )}
 
-          {/* Game content */}
-          {activeGame === "snake" && <SnakeGame active={visible && activeGame === "snake"} />}
-          {activeGame === "flappy" && <FlappyBirdGame active={visible && activeGame === "flappy"} />}
-          {activeGame === "breathing" && <BoxBreathingGame active={visible && activeGame === "breathing"} />}
-
-          {/* Game selector tabs */}
-          <View style={[styles.gameTabs, { borderTopColor: colors.border }]}>
-            {GAME_TABS.map(({ id, emoji, label }) => (
-              <TouchableOpacity
-                key={id}
-                style={[
-                  styles.gameTab,
-                  {
-                    borderColor: activeGame === id ? colors.primary : colors.border,
-                    backgroundColor: activeGame === id ? colors.primary + "18" : "transparent",
-                  },
-                ]}
-                onPress={() => onGameChange?.(activeGame === id ? null : id)}
-              >
-                <Text style={{ fontSize: 16 }}>{emoji}</Text>
-                <Text style={[styles.gameTabLabel, { color: activeGame === id ? colors.primary : colors.mutedForeground }]}>
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            ))}
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </View>
     </Modal>
   );
@@ -688,15 +505,14 @@ export default function RestTimerModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.75)",
+    backgroundColor: "rgba(0,0,0,0.78)",
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
   },
   modal: {
-    borderRadius: 24,
+    borderRadius: 28,
     borderWidth: 1,
-    width: 300,
+    width: 340,
     overflow: "hidden",
   },
 
@@ -711,26 +527,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 12,
   },
-  notifEmoji: { fontSize: 26 },
+  notifEmoji: { fontSize: 28 },
   notifTitle: { fontSize: 14, fontWeight: "700", fontFamily: "Inter_700Bold" },
   notifMsg: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
 
   // Full ring layout
   ringWrap: {
     alignItems: "center",
-    paddingTop: 20,
-    paddingBottom: 16,
-    gap: 12,
+    paddingTop: 24,
+    paddingBottom: 20,
+    gap: 16,
   },
   restLabel: {
     fontSize: 12, fontWeight: "600", fontFamily: "Inter_600SemiBold",
     textTransform: "uppercase", letterSpacing: 2,
   },
-  restTime: { fontSize: 42, fontWeight: "700", fontFamily: "Inter_700Bold" },
-  adjRow: { flexDirection: "row", gap: 8 },
-  adjBtn: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 100 },
+  restTime: { fontSize: 52, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  adjRow: { flexDirection: "row", gap: 10 },
+  adjBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 100 },
   adjText: { fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
-  skipBtn: { paddingHorizontal: 18, paddingVertical: 9, borderRadius: 100 },
+  skipBtn: { paddingHorizontal: 22, paddingVertical: 10, borderRadius: 100 },
   skipText: { fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 
   // Compact bar (when game is open)
@@ -742,7 +558,7 @@ const styles = StyleSheet.create({
     gap: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  compactTime: { fontSize: 22, fontWeight: "700", fontFamily: "Inter_700Bold", minWidth: 56 },
+  compactTime: { fontSize: 22, fontWeight: "700", fontFamily: "Inter_700Bold", minWidth: 60 },
   compactAdj: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 100 },
   compactAdjText: { fontSize: 12, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
   compactSkip: { flex: 1, paddingVertical: 7, borderRadius: 100, alignItems: "center" },
@@ -754,22 +570,13 @@ const styles = StyleSheet.create({
   gameHint: { fontSize: 11, fontFamily: "Inter_400Regular" },
 
   // Snake
-  snakeGrid: { borderRadius: 8, overflow: "hidden" },
+  snakeGrid: { borderRadius: 10, overflow: "hidden" },
   gameOver: { alignItems: "center", justifyContent: "center", gap: 4 },
   gameOverText: { color: "#fff", fontSize: 16, fontWeight: "700", fontFamily: "Inter_700Bold" },
   gameOverSub: { color: "#ffffffcc", fontSize: 12, fontFamily: "Inter_400Regular" },
 
-  // D-pad
-  dpad: { alignItems: "center" },
-  dpadBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  dpadRow: { flexDirection: "row", alignItems: "center" },
-  dpadCenter: { width: 22, height: 22, borderRadius: 11 },
-
-  // Flappy
-  flappyCanvas: { borderRadius: 8 },
-
   // Box breathing
-  breathCount: { fontSize: 28, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  breathCount: { fontSize: 30, fontWeight: "700", fontFamily: "Inter_700Bold" },
   breathLabel: { fontSize: 18, fontWeight: "700", fontFamily: "Inter_700Bold" },
   breathSub: { fontSize: 13, fontFamily: "Inter_400Regular" },
   breathHint: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 4 },
@@ -778,17 +585,17 @@ const styles = StyleSheet.create({
   gameTabs: {
     flexDirection: "row",
     borderTopWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
   },
   gameTab: {
     flex: 1,
     alignItems: "center",
-    gap: 3,
-    paddingVertical: 8,
-    borderRadius: 12,
+    gap: 4,
+    paddingVertical: 10,
+    borderRadius: 14,
     borderWidth: 1,
   },
-  gameTabLabel: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  gameTabLabel: { fontSize: 12, fontFamily: "Inter_500Medium" },
 });
