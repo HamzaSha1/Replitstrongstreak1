@@ -145,9 +145,8 @@ export default function SplitImportExport({ visible, onClose, splitToExport }: P
         if (result.canceled) return;
 
         const file = result.assets[0];
-        content = await FileSystem.readAsStringAsync(file.uri, {
-          encoding: FileSystem.EncodingType.UTF8,
-        });
+        const fetchResp = await fetch(file.uri);
+        content = await fetchResp.text();
       }
 
       let parsed: any;
