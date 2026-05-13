@@ -11,7 +11,7 @@ import {
   onSnapshot,
   serverTimestamp,
   Timestamp,
-} from "firebase/firestore";
+} from "@firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 
