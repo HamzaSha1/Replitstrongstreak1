@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
-  View, Text, StyleSheet, Modal, TouchableOpacity, Animated,
+  View, Text, StyleSheet, TouchableOpacity, Animated,
   TouchableWithoutFeedback, PanResponder,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import * as Haptics from "expo-haptics";
+import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -138,21 +139,15 @@ function SnakeGame({ active }: { active: boolean }) {
     return () => { loopRef.current && clearInterval(loopRef.current); };
   }, [active]);
 
-  // ── Swipe PanResponder ────────────────────────────────────────────────────
+  // Swipe pan responder
   const swipePan = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderTerminationRequest: () => false,
       onPanResponderRelease: (_, g) => {
-        // Tap on game-over screen → restart
-        if (!alive.current) {
-          reset();
-          setTick((t) => t + 1);
-          return;
-        }
+        if (!alive.current) { reset(); setTick((t) => t + 1); return; }
         const { dx, dy } = g;
-        // Ignore tiny movements (accidental taps)
         if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
         if (Math.abs(dx) >= Math.abs(dy)) {
           nextDir.current = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
@@ -170,13 +165,10 @@ function SnakeGame({ active }: { active: boolean }) {
   return (
     <View style={styles.gameWrap}>
       <Text style={[styles.gameScore, { color: colors.primary }]}>🐍  Score: {score.current}</Text>
-
-      {/* Grid — swipe anywhere on it to steer */}
       <View
         style={[styles.snakeGrid, { width: GAME_W, height: GAME_W, backgroundColor: colors.muted + "50" }]}
         {...swipePan.panHandlers}
       >
-        {/* Food */}
         <View
           style={{
             position: "absolute",
@@ -186,7 +178,6 @@ function SnakeGame({ active }: { active: boolean }) {
             backgroundColor: "#FF6B6B",
           }}
         />
-        {/* Snake */}
         {snakePos.map((seg, i) => (
           <View
             key={i}
@@ -199,7 +190,6 @@ function SnakeGame({ active }: { active: boolean }) {
             }}
           />
         ))}
-        {/* Game over overlay (non-interactive — tap handled by PanResponder above) */}
         {!isAlive && (
           <View
             style={[StyleSheet.absoluteFillObject, styles.gameOver, { backgroundColor: "rgba(0,0,0,0.72)" }]}
@@ -211,7 +201,6 @@ function SnakeGame({ active }: { active: boolean }) {
           </View>
         )}
       </View>
-
       <Text style={[styles.gameHint, { color: colors.mutedForeground }]}>Swipe to steer 👆</Text>
     </View>
   );
@@ -221,9 +210,9 @@ function SnakeGame({ active }: { active: boolean }) {
 
 const BREATH_PHASES = [
   { label: "Inhale", sub: "Breathe in slowly...", dur: 4000, toScale: 1.0 },
-  { label: "Hold", sub: "Hold your breath...", dur: 4000, toScale: 1.0 },
+  { label: "Hold",   sub: "Hold your breath...",  dur: 4000, toScale: 1.0 },
   { label: "Exhale", sub: "Breathe out slowly...", dur: 4000, toScale: 0.35 },
-  { label: "Hold", sub: "Hold...", dur: 4000, toScale: 0.35 },
+  { label: "Hold",   sub: "Hold...",               dur: 4000, toScale: 0.35 },
 ] as const;
 
 function BoxBreathingGame({ active }: { active: boolean }) {
@@ -238,19 +227,11 @@ function BoxBreathingGame({ active }: { active: boolean }) {
     const p = BREATH_PHASES[idx % BREATH_PHASES.length];
     setPhaseIdx(idx % BREATH_PHASES.length);
     setCount(p.dur / 1000);
-
-    animRef.current = Animated.timing(scale, {
-      toValue: p.toScale, duration: p.dur, useNativeDriver: true,
-    });
+    animRef.current = Animated.timing(scale, { toValue: p.toScale, duration: p.dur, useNativeDriver: true });
     animRef.current.start(({ finished }) => { if (finished) startPhase(idx + 1); });
-
     countRef.current && clearInterval(countRef.current);
     let rem = p.dur / 1000;
-    countRef.current = setInterval(() => {
-      rem--;
-      if (rem > 0) setCount(rem);
-      else clearInterval(countRef.current!);
-    }, 1000);
+    countRef.current = setInterval(() => { rem--; if (rem > 0) setCount(rem); else clearInterval(countRef.current!); }, 1000);
   };
 
   useEffect(() => {
@@ -261,10 +242,7 @@ function BoxBreathingGame({ active }: { active: boolean }) {
       return;
     }
     startPhase(0);
-    return () => {
-      animRef.current?.stop();
-      countRef.current && clearInterval(countRef.current);
-    };
+    return () => { animRef.current?.stop(); countRef.current && clearInterval(countRef.current); };
   }, [active]);
 
   const p = BREATH_PHASES[phaseIdx];
@@ -272,12 +250,10 @@ function BoxBreathingGame({ active }: { active: boolean }) {
   return (
     <View style={[styles.gameWrap, { alignItems: "center", paddingVertical: 20 }]}>
       <Text style={[styles.gameScore, { color: colors.primary, alignSelf: "center" }]}>🫁  Box Breathing</Text>
-
       <View style={{ width: 140, height: 140, alignItems: "center", justifyContent: "center", marginVertical: 12 }}>
         <Animated.View
           style={{
-            width: 120, height: 120,
-            borderRadius: 60,
+            width: 120, height: 120, borderRadius: 60,
             backgroundColor: colors.primary + "28",
             borderWidth: 2, borderColor: colors.primary,
             transform: [{ scale }],
@@ -287,7 +263,6 @@ function BoxBreathingGame({ active }: { active: boolean }) {
           <Text style={[styles.breathCount, { color: colors.primary }]}>{count}</Text>
         </View>
       </View>
-
       <Text style={[styles.breathLabel, { color: colors.foreground }]}>{p.label}</Text>
       <Text style={[styles.breathSub, { color: colors.mutedForeground }]}>{p.sub}</Text>
       <Text style={[styles.breathHint, { color: colors.mutedForeground }]}>4-4-4-4 box breathing</Text>
@@ -296,6 +271,8 @@ function BoxBreathingGame({ active }: { active: boolean }) {
 }
 
 // ─── RestTimerModal ───────────────────────────────────────────────────────────
+// Rendered as an absolute overlay (NOT a RN Modal) so it can be minimized
+// while still allowing interaction with the workout screen underneath.
 
 interface RestTimerModalProps {
   visible: boolean;
@@ -307,29 +284,26 @@ interface RestTimerModalProps {
 }
 
 const GAME_TABS: { id: GameType; emoji: string; label: string }[] = [
-  { id: "snake", emoji: "🐍", label: "Snake" },
+  { id: "snake",     emoji: "🐍", label: "Snake"  },
   { id: "breathing", emoji: "🫁", label: "Breathe" },
 ];
 
 export default function RestTimerModal({
-  visible,
-  seconds,
-  onClose,
-  notification,
-  currentGame,
-  onGameChange,
+  visible, seconds, onClose, notification, currentGame, onGameChange,
 }: RestTimerModalProps) {
   const colors = useColors();
   const [remaining, setRemaining] = useState(seconds);
   const totalRef = useRef(seconds);
   const [showNotif, setShowNotif] = useState(false);
   const notifKey = useRef(0);
+  const [minimized, setMinimized] = useState(false);
 
   // ── Timer countdown ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!visible) {
       setRemaining(seconds);
       totalRef.current = seconds;
+      setMinimized(false);
       return;
     }
     totalRef.current = seconds;
@@ -348,7 +322,7 @@ export default function RestTimerModal({
     return () => clearInterval(iv);
   }, [visible, seconds]);
 
-  // ── Notification card lifecycle ────────────────────────────────────────────
+  // ── Notification card ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!visible || !notification) { setShowNotif(false); return; }
     notifKey.current += 1;
@@ -371,18 +345,31 @@ export default function RestTimerModal({
   const strokeOffset = CIRCUMFERENCE * (1 - progress);
   const activeGame = currentGame ?? null;
   const hasGame = !!activeGame;
+  const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
+
+  if (!visible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.overlay}>
+    // Outer container: covers the full screen.
+    // When minimized → pointerEvents="box-none" so taps fall through to workout screen,
+    // except on the pill itself (which is a child and still captures taps).
+    <View
+      style={[StyleSheet.absoluteFillObject, styles.outerWrap]}
+      pointerEvents={minimized ? "box-none" : "auto"}
+    >
 
-        {/* ── Backdrop — tap anywhere outside box to dismiss ─────────────── */}
-        <TouchableWithoutFeedback onPress={onClose}>
-          <View style={StyleSheet.absoluteFillObject} />
+      {/* ── Dark backdrop — only when NOT minimized ─────────────────────── */}
+      {!minimized && (
+        <TouchableWithoutFeedback onPress={() => setMinimized(true)}>
+          <View style={[StyleSheet.absoluteFillObject, styles.backdrop]} />
         </TouchableWithoutFeedback>
+      )}
 
-        {/* ── Modal box — stops tap propagation to backdrop ─────────────── */}
-        <TouchableWithoutFeedback onPress={() => { /* absorb taps */ }}>
+      {/* ── Full timer box ──────────────────────────────────────────────────
+          Hidden via display:'none' when minimized so components (games, timer)
+          stay mounted and keep running. State & intervals are preserved. */}
+      <View style={[styles.centered, { display: minimized ? "none" : "flex" }]}>
+        <TouchableWithoutFeedback onPress={() => { /* absorb taps inside box */ }}>
           <View style={[styles.modal, { backgroundColor: colors.card, borderColor: colors.border }]}>
 
             {/* Notification card */}
@@ -391,32 +378,21 @@ export default function RestTimerModal({
             )}
 
             {hasGame ? (
-              // Compact timer bar
+              // Compact timer bar when a game is open
               <View style={[styles.compactBar, { borderBottomColor: colors.border }]}>
-                <Text style={[styles.compactTime, { color: colors.foreground }]}>
-                  {mins}:{secs.toString().padStart(2, "0")}
-                </Text>
-                <TouchableOpacity
-                  style={[styles.compactAdj, { backgroundColor: colors.muted }]}
-                  onPress={() => adjustTime(-10)}
-                >
+                <Text style={[styles.compactTime, { color: colors.foreground }]}>{timeStr}</Text>
+                <TouchableOpacity style={[styles.compactAdj, { backgroundColor: colors.muted }]} onPress={() => adjustTime(-10)}>
                   <Text style={[styles.compactAdjText, { color: colors.foreground }]}>-10s</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.compactSkip, { backgroundColor: colors.muted }]}
-                  onPress={onClose}
-                >
+                <TouchableOpacity style={[styles.compactSkip, { backgroundColor: colors.muted }]} onPress={onClose}>
                   <Text style={[styles.compactSkipText, { color: colors.foreground }]}>Skip</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.compactAdj, { backgroundColor: colors.muted }]}
-                  onPress={() => adjustTime(10)}
-                >
+                <TouchableOpacity style={[styles.compactAdj, { backgroundColor: colors.muted }]} onPress={() => adjustTime(10)}>
                   <Text style={[styles.compactAdjText, { color: colors.foreground }]}>+10s</Text>
                 </TouchableOpacity>
               </View>
             ) : (
-              // Full ring
+              // Full circular ring
               <View style={styles.ringWrap}>
                 <Text style={[styles.restLabel, { color: colors.mutedForeground }]}>REST</Text>
                 <View style={{ width: RING_SIZE, height: RING_SIZE, alignItems: "center", justifyContent: "center" }}>
@@ -434,42 +410,27 @@ export default function RestTimerModal({
                       transform={`rotate(-90, ${RING_SIZE / 2}, ${RING_SIZE / 2})`}
                     />
                   </Svg>
-                  <View
-                    style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center" }]}
-                    pointerEvents="none"
-                  >
-                    <Text style={[styles.restTime, { color: colors.foreground }]}>
-                      {mins}:{secs.toString().padStart(2, "0")}
-                    </Text>
+                  <View style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center" }]} pointerEvents="none">
+                    <Text style={[styles.restTime, { color: colors.foreground }]}>{timeStr}</Text>
                   </View>
                 </View>
-
                 <View style={styles.adjRow}>
-                  <TouchableOpacity
-                    style={[styles.adjBtn, { backgroundColor: colors.muted }]}
-                    onPress={() => adjustTime(-10)}
-                  >
+                  <TouchableOpacity style={[styles.adjBtn, { backgroundColor: colors.muted }]} onPress={() => adjustTime(-10)}>
                     <Text style={[styles.adjText, { color: colors.foreground }]}>-10s</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.skipBtn, { backgroundColor: colors.muted }]}
-                    onPress={onClose}
-                  >
+                  <TouchableOpacity style={[styles.skipBtn, { backgroundColor: colors.muted }]} onPress={onClose}>
                     <Text style={[styles.skipText, { color: colors.foreground }]}>Skip Rest</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.adjBtn, { backgroundColor: colors.muted }]}
-                    onPress={() => adjustTime(10)}
-                  >
+                  <TouchableOpacity style={[styles.adjBtn, { backgroundColor: colors.muted }]} onPress={() => adjustTime(10)}>
                     <Text style={[styles.adjText, { color: colors.foreground }]}>+10s</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             )}
 
-            {/* Active game */}
-            {activeGame === "snake" && <SnakeGame active={visible && activeGame === "snake"} />}
-            {activeGame === "breathing" && <BoxBreathingGame active={visible && activeGame === "breathing"} />}
+            {/* Games — always mounted when visible so state survives minimize */}
+            {activeGame === "snake"     && <SnakeGame        active={activeGame === "snake"}     />}
+            {activeGame === "breathing" && <BoxBreathingGame active={activeGame === "breathing"} />}
 
             {/* Game tabs */}
             <View style={[styles.gameTabs, { borderTopColor: colors.border }]}>
@@ -496,18 +457,43 @@ export default function RestTimerModal({
           </View>
         </TouchableWithoutFeedback>
       </View>
-    </Modal>
+
+      {/* ── Floating pill — only when minimized ────────────────────────────
+          pointerEvents="box-none" on pillWrap lets taps miss the empty
+          area around the pill through to the workout screen. */}
+      {minimized && (
+        <View style={styles.pillWrap} pointerEvents="box-none">
+          <TouchableOpacity
+            style={[styles.pill, { backgroundColor: colors.card, borderColor: colors.primary + "70" }]}
+            onPress={() => setMinimized(false)}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="timer-outline" size={16} color={colors.primary} />
+            <Text style={[styles.pillTime, { color: colors.primary }]}>{timeStr}</Text>
+            <Text style={[styles.pillLabel, { color: colors.mutedForeground }]}>Tap to restore</Text>
+            <Ionicons name="chevron-up" size={14} color={colors.mutedForeground} />
+          </TouchableOpacity>
+        </View>
+      )}
+
+    </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
+  outerWrap: {
+    zIndex: 999,
+  },
+  backdrop: {
     backgroundColor: "rgba(0,0,0,0.78)",
+  },
+  centered: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    padding: 20,
   },
   modal: {
     borderRadius: 28,
@@ -518,30 +504,16 @@ const styles = StyleSheet.create({
 
   // Notification card
   notifCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    margin: 14,
-    marginBottom: 6,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 12,
+    flexDirection: "row", alignItems: "center", gap: 10,
+    margin: 14, marginBottom: 6, borderRadius: 14, borderWidth: 1, padding: 12,
   },
   notifEmoji: { fontSize: 28 },
   notifTitle: { fontSize: 14, fontWeight: "700", fontFamily: "Inter_700Bold" },
   notifMsg: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
 
-  // Full ring layout
-  ringWrap: {
-    alignItems: "center",
-    paddingTop: 24,
-    paddingBottom: 20,
-    gap: 16,
-  },
-  restLabel: {
-    fontSize: 12, fontWeight: "600", fontFamily: "Inter_600SemiBold",
-    textTransform: "uppercase", letterSpacing: 2,
-  },
+  // Full ring
+  ringWrap: { alignItems: "center", paddingTop: 24, paddingBottom: 20, gap: 16 },
+  restLabel: { fontSize: 12, fontWeight: "600", fontFamily: "Inter_600SemiBold", textTransform: "uppercase", letterSpacing: 2 },
   restTime: { fontSize: 52, fontWeight: "700", fontFamily: "Inter_700Bold" },
   adjRow: { flexDirection: "row", gap: 10 },
   adjBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 100 },
@@ -549,13 +521,10 @@ const styles = StyleSheet.create({
   skipBtn: { paddingHorizontal: 22, paddingVertical: 10, borderRadius: 100 },
   skipText: { fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 
-  // Compact bar (when game is open)
+  // Compact bar (game open)
   compactBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 8,
+    flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 14, paddingVertical: 12, gap: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   compactTime: { fontSize: 22, fontWeight: "700", fontFamily: "Inter_700Bold", minWidth: 60 },
@@ -564,7 +533,7 @@ const styles = StyleSheet.create({
   compactSkip: { flex: 1, paddingVertical: 7, borderRadius: 100, alignItems: "center" },
   compactSkipText: { fontSize: 12, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 
-  // Shared game wrapper
+  // Game wrapper
   gameWrap: { paddingHorizontal: 14, paddingTop: 10, paddingBottom: 4, gap: 6, alignItems: "center" },
   gameScore: { fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold", alignSelf: "flex-start" },
   gameHint: { fontSize: 11, fontFamily: "Inter_400Regular" },
@@ -583,19 +552,33 @@ const styles = StyleSheet.create({
 
   // Game tabs
   gameTabs: {
-    flexDirection: "row",
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 10,
+    flexDirection: "row", borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14, paddingVertical: 12, gap: 10,
   },
-  gameTab: {
-    flex: 1,
-    alignItems: "center",
-    gap: 4,
-    paddingVertical: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
+  gameTab: { flex: 1, alignItems: "center", gap: 4, paddingVertical: 10, borderRadius: 14, borderWidth: 1 },
   gameTabLabel: { fontSize: 12, fontFamily: "Inter_500Medium" },
+
+  // Minimized pill
+  pillWrap: {
+    position: "absolute",
+    bottom: 110,
+    left: 0, right: 0,
+    alignItems: "center",
+  },
+  pill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  pillTime: { fontSize: 18, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  pillLabel: { fontSize: 12, fontFamily: "Inter_400Regular" },
 });
