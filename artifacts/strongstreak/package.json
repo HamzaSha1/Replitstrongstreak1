@@ -57,10 +57,10 @@
   },
   "dependencies": {
     "date-fns": "^3.6.0",
-    "expo-document-picker": "^55.0.13",
-    "expo-file-system": "^55.0.19",
-    "expo-sharing": "^55.0.18",
+    "expo-document-picker": "~14.0.8",
+    "expo-file-system": "~19.0.22",
+    "expo-sharing": "~14.0.8",
     "firebase": "^11.10.0",
-    "expo-notifications": "~0.31.4"
+    "expo-notifications": "~0.32.17"
   }
 }
