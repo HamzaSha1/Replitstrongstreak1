@@ -312,9 +312,12 @@ function StreakCelebration({ streak, onDone }: { streak: number; onDone: () => v
 function RestTimerModal({ visible, seconds, onClose }: { visible: boolean; seconds: number; onClose: () => void }) {
   const colors = useColors();
   const [remaining, setRemaining] = useState(seconds);
+  const totalRef = useRef(seconds);
 
   useEffect(() => {
-    if (!visible) { setRemaining(seconds); return; }
+    if (!visible) { setRemaining(seconds); totalRef.current = seconds; return; }
+    totalRef.current = seconds;
+    setRemaining(seconds);
     const interval = setInterval(() => {
       setRemaining((r) => {
         if (r <= 1) {
@@ -329,7 +332,15 @@ function RestTimerModal({ visible, seconds, onClose }: { visible: boolean; secon
     return () => clearInterval(interval);
   }, [visible, seconds]);
 
-  const progress = seconds > 0 ? remaining / seconds : 0;
+  const adjustTime = (delta: number) => {
+    setRemaining((r) => {
+      const next = Math.max(1, r + delta);
+      if (next > totalRef.current) totalRef.current = next;
+      return next;
+    });
+  };
+
+  const progress = totalRef.current > 0 ? remaining / totalRef.current : 0;
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;
 
@@ -342,11 +353,19 @@ function RestTimerModal({ visible, seconds, onClose }: { visible: boolean; secon
             {mins}:{secs.toString().padStart(2, "0")}
           </Text>
           <View style={[styles.restProgressBg, { backgroundColor: colors.muted }]}>
-            <View style={[styles.restProgressFill, { backgroundColor: colors.primary, width: `${progress * 100}%` as any }]} />
+            <View style={[styles.restProgressFill, { backgroundColor: colors.primary, width: `${Math.min(progress * 100, 100)}%` as any }]} />
           </View>
-          <TouchableOpacity style={[styles.restSkipBtn, { backgroundColor: colors.muted }]} onPress={onClose}>
-            <Text style={[styles.restSkipText, { color: colors.foreground }]}>Skip Rest</Text>
-          </TouchableOpacity>
+          <View style={styles.restAdjRow}>
+            <TouchableOpacity style={[styles.restAdjBtn, { backgroundColor: colors.muted }]} onPress={() => adjustTime(-10)}>
+              <Text style={[styles.restAdjText, { color: colors.foreground }]}>-10s</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.restSkipBtn, { backgroundColor: colors.muted }]} onPress={onClose}>
+              <Text style={[styles.restSkipText, { color: colors.foreground }]}>Skip Rest</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.restAdjBtn, { backgroundColor: colors.muted }]} onPress={() => adjustTime(10)}>
+              <Text style={[styles.restAdjText, { color: colors.foreground }]}>+10s</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -688,7 +707,7 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
           styles.setRow,
           isDropset && { borderLeftWidth: 2, borderLeftColor: colors.primary + "40", paddingLeft: 8 },
           set.completed && { opacity: 0.65 },
-          { transform: [{ translateX: swipeX }] },
+          { transform: [{ translateX: swipeX }], backgroundColor: colors.card },
         ]}
         {...panResponder.panHandlers}
       >
@@ -724,7 +743,7 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
                   style={[styles.setInput, { flex: 1, backgroundColor: colors.muted, color: colors.foreground, borderColor: set.completed ? colors.primary + "30" : colors.border }]}
                   value={set.reps}
                   onChangeText={(v) => onUpdate({ reps: formatMmSs(v) })}
-                  keyboardType="decimal-pad"
+                  keyboardType="numbers-and-punctuation"
                   placeholder="0:00"
                   placeholderTextColor={colors.mutedForeground + "50"}
                   editable={!set.completed}
@@ -766,13 +785,14 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
 
 // ─── ExerciseCard ─────────────────────────────────────────────────────────────
 
-function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReordering, isFirst, isLast, onSetsChange, onCompleteRequest, onSwapPress, onExtraChange, onMoveUp, onMoveDown, onStartReorder, onDoneReorder }: {
+function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReordering, isCollapsed, isFirst, isLast, onSetsChange, onCompleteRequest, onSwapPress, onExtraChange, onMoveUp, onMoveDown, onStartReorder, onDoneReorder }: {
   exercise: Exercise;
   sets: LocalSet[];
   prevSets: LocalSet[];
   weightUnit: "kg" | "lbs";
   extra: ExerciseExtra;
   isReordering: boolean;
+  isCollapsed: boolean;
   isFirst: boolean;
   isLast: boolean;
   onSetsChange: (sets: LocalSet[]) => void;
@@ -788,6 +808,14 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReorderin
   const [showHistory, setShowHistory] = useState(false);
   const completedCount = sets.filter((s) => s.completed).length;
   const isCardio = exercise.type === "cardio";
+
+  if (isCollapsed) {
+    return (
+      <View style={[styles.exerciseCard, { backgroundColor: colors.muted + "30", borderColor: colors.border, paddingVertical: 12, paddingHorizontal: 14 }]}>
+        <Text style={[styles.exName, { color: colors.mutedForeground }]}>{exercise.name}</Text>
+      </View>
+    );
+  }
 
   const updateSet = (i: number, patch: Partial<LocalSet>) => {
     onSetsChange(sets.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
@@ -904,6 +932,32 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReorderin
         )}
       </View>
 
+      {/* Notes section — top of card */}
+      <TouchableOpacity
+        style={[styles.notesToggle, { borderTopColor: colors.border }]}
+        onPress={() => onExtraChange({ notesExpanded: !extra.notesExpanded })}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="document-text-outline" size={13} color={colors.mutedForeground} />
+        <Text style={[styles.notesToggleText, { color: colors.mutedForeground }]}>
+          {extra.notesExpanded ? "Hide notes" : extra.notes ? "Notes · " + extra.notes.slice(0, 24) + (extra.notes.length > 24 ? "…" : "") : "Add notes"}
+        </Text>
+        <Ionicons name={extra.notesExpanded ? "chevron-up" : "chevron-down"} size={13} color={colors.mutedForeground} />
+      </TouchableOpacity>
+      {extra.notesExpanded && (
+        <View style={{ paddingHorizontal: 14, paddingBottom: 10 }}>
+          <TextInput
+            style={[styles.notesField, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
+            value={extra.notes}
+            onChangeText={(v) => onExtraChange({ notes: v })}
+            placeholder="Exercise notes, cues, reminders..."
+            placeholderTextColor={colors.mutedForeground}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+      )}
+
       {/* History panel */}
       {showHistory && (
         <View style={[styles.historyPanel, { backgroundColor: colors.muted + "30", borderColor: colors.border }]}>
@@ -967,31 +1021,6 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReorderin
         <Text style={[styles.addSetText, { color: colors.primary }]}>Add set</Text>
       </TouchableOpacity>
 
-      {/* Notes section */}
-      <TouchableOpacity
-        style={[styles.notesToggle, { borderTopColor: colors.border }]}
-        onPress={() => onExtraChange({ notesExpanded: !extra.notesExpanded })}
-        activeOpacity={0.7}
-      >
-        <Ionicons name="document-text-outline" size={13} color={colors.mutedForeground} />
-        <Text style={[styles.notesToggleText, { color: colors.mutedForeground }]}>
-          {extra.notesExpanded ? "Hide notes" : extra.notes ? "Notes ·" + extra.notes.slice(0, 24) + (extra.notes.length > 24 ? "…" : "") : "Add notes"}
-        </Text>
-        <Ionicons name={extra.notesExpanded ? "chevron-up" : "chevron-down"} size={13} color={colors.mutedForeground} />
-      </TouchableOpacity>
-      {extra.notesExpanded && (
-        <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}>
-          <TextInput
-            style={[styles.notesField, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
-            value={extra.notes}
-            onChangeText={(v) => onExtraChange({ notes: v })}
-            placeholder="Exercise notes, cues, reminders..."
-            placeholderTextColor={colors.mutedForeground}
-            multiline
-            numberOfLines={3}
-          />
-        </View>
-      )}
     </View>
   );
 }
@@ -1288,6 +1317,7 @@ export default function ActiveWorkoutScreen() {
             weightUnit={weightUnit}
             extra={extras[ex.id] ?? defaultExtra()}
             isReordering={reorderingId === ex.id}
+            isCollapsed={reorderingId !== null && reorderingId !== ex.id}
             isFirst={idx === 0}
             isLast={idx === localExercises.length - 1}
             onSetsChange={(newSets) => setAllSets((prev) => ({ ...prev, [ex.id]: newSets }))}
@@ -1491,9 +1521,12 @@ const styles = StyleSheet.create({
   restModal: { borderRadius: 24, borderWidth: 1, padding: 32, alignItems: "center", gap: 16, width: 280 },
   restTitle: { fontSize: 12, fontFamily: "Inter_600SemiBold", textTransform: "uppercase", letterSpacing: 1.5 },
   restTime: { fontSize: 56, fontWeight: "700", fontFamily: "Inter_700Bold" },
-  restProgressBg: { width: "100%", height: 5, borderRadius: 3 },
+  restProgressBg: { alignSelf: "stretch", height: 5, borderRadius: 3, overflow: "hidden" },
   restProgressFill: { height: 5, borderRadius: 3 },
-  restSkipBtn: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 100 },
+  restAdjRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  restAdjBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 100 },
+  restAdjText: { fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  restSkipBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 100 },
   restSkipText: { fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 
   // RIR picker
