@@ -753,13 +753,16 @@ export default function ActiveWorkoutScreen() {
     setAllSets(initial);
   }, []);
 
+  useEffect(() => {
+    if (!activeWorkout) {
+      router.replace("/");
+    }
+  }, [activeWorkout]);
+
   const topPad = Platform.OS === "web" ? 20 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
-  if (!activeWorkout) {
-    router.replace("/");
-    return null;
-  }
+  if (!activeWorkout) return null;
 
   const color = SESSION_COLORS[activeWorkout.sessionType] ?? colors.primary;
   const allFlatSets = Object.values(allSets).flat();

@@ -7,7 +7,6 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
   onSnapshot,
   serverTimestamp,
   Timestamp,
@@ -187,17 +186,21 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     );
 
     const unsubLogs = onSnapshot(
-      query(collection(db, "workoutLogs"), where("userId", "==", uid), orderBy("startedAt", "desc")),
+      query(collection(db, "workoutLogs"), where("userId", "==", uid)),
       (snap) => {
-        setWorkoutLogs(snap.docs.map((d) => d.data() as WorkoutLog));
+        const logs = snap.docs.map((d) => d.data() as WorkoutLog);
+        logs.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+        setWorkoutLogs(logs);
         setIsLoaded(true);
       }
     );
 
     const unsubWeight = onSnapshot(
-      query(collection(db, "weightEntries"), where("userId", "==", uid), orderBy("date", "desc")),
+      query(collection(db, "weightEntries"), where("userId", "==", uid)),
       (snap) => {
-        setWeightEntries(snap.docs.map((d) => d.data() as WeightEntry));
+        const entries = snap.docs.map((d) => d.data() as WeightEntry);
+        entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setWeightEntries(entries);
       }
     );
 
