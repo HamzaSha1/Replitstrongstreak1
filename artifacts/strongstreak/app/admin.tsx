@@ -19,7 +19,7 @@ import {
   deleteDoc,
   doc,
   orderBy,
-} from "@firebase/firestore";
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
