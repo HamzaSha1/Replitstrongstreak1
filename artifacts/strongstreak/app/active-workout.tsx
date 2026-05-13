@@ -652,31 +652,50 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
   const swipeX = useRef(new Animated.Value(0)).current;
   const isOpen = useRef(false);
 
+  const snapTo = (toValue: number, open: boolean) => {
+    Animated.spring(swipeX, {
+      toValue,
+      useNativeDriver: true,
+      bounciness: 3,
+      speed: 14,
+    }).start();
+    isOpen.current = open;
+  };
+
   const panResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > Math.abs(g.dy) + 5,
+      // Don't steal the initial touch — let ScrollView have it
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      // Only claim gesture when movement is clearly horizontal
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
+      onMoveShouldSetPanResponderCapture: (_, g) =>
+        Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
+      // Once claimed, don't give the gesture back to ScrollView
+      onPanResponderTerminationRequest: () => false,
       onPanResponderMove: (_, g) => {
-        const dx = Math.min(Math.max(g.dx + (isOpen.current ? -80 : 0), -80), 0);
+        const base = isOpen.current ? -80 : 0;
+        const dx = Math.min(Math.max(g.dx + base, -80), 0);
         swipeX.setValue(dx);
       },
       onPanResponderRelease: (_, g) => {
-        const finalOffset = g.dx + (isOpen.current ? -80 : 0);
-        if (finalOffset < -40) {
-          Animated.spring(swipeX, { toValue: -80, useNativeDriver: true }).start();
-          isOpen.current = true;
-        } else {
-          Animated.spring(swipeX, { toValue: 0, useNativeDriver: true }).start();
-          isOpen.current = false;
-        }
+        const base = isOpen.current ? -80 : 0;
+        const finalOffset = g.dx + base;
+        // Velocity-based snap takes priority (feels fluid)
+        if (g.vx > 0.4) { snapTo(0, false); return; }
+        if (g.vx < -0.4) { snapTo(-80, true); return; }
+        // Position-based snap
+        if (finalOffset < -40) snapTo(-80, true);
+        else snapTo(0, false);
       },
+      // If gesture is taken away (e.g. by system), reset cleanly
+      onPanResponderTerminate: () => snapTo(0, false),
     })
   ).current;
 
   const closeSwipe = () => {
-    if (isOpen.current) {
-      Animated.spring(swipeX, { toValue: 0, useNativeDriver: true }).start();
-      isOpen.current = false;
-    }
+    if (isOpen.current) snapTo(0, false);
   };
 
   const formatMmSs = (val: string) => {
@@ -691,13 +710,11 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
   };
 
   return (
-    <View style={[styles.setRowWrap, isDropset && { marginLeft: 14 }]}>
-      {/* Delete button behind swipe */}
+    // setRowWrap has an opaque background so the red button NEVER bleeds through
+    <View style={[styles.setRowWrap, isDropset && { marginLeft: 14 }, { backgroundColor: colors.card }]}>
+      {/* Delete button — hidden behind the row until swiped */}
       <View style={[styles.deleteReveal, { backgroundColor: colors.destructive }]}>
-        <TouchableOpacity
-          style={styles.deleteRevealBtn}
-          onPress={() => { onDelete(); }}
-        >
+        <TouchableOpacity style={styles.deleteRevealBtn} onPress={onDelete}>
           <Ionicons name="trash" size={16} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -706,12 +723,12 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
         style={[
           styles.setRow,
           isDropset && { borderLeftWidth: 2, borderLeftColor: colors.primary + "40", paddingLeft: 8 },
-          set.completed && { opacity: 0.65 },
+          // Dim text/inputs for completed rows but keep background opaque
           { transform: [{ translateX: swipeX }], backgroundColor: colors.card },
         ]}
         {...panResponder.panHandlers}
       >
-        <TouchableOpacity onPress={closeSwipe} activeOpacity={1} style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <TouchableOpacity onPress={closeSwipe} activeOpacity={1} style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 6, opacity: set.completed ? 0.55 : 1 }}>
           <Text style={[styles.setLabel, { color: isDropset ? colors.primary + "90" : colors.mutedForeground }]}>
             {isDropset ? "DS" : set.setNumber}
           </Text>
@@ -769,7 +786,11 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.checkBtn, { backgroundColor: set.completed ? colors.primary : "transparent", borderColor: set.completed ? colors.primary : colors.border }]}
+          style={[
+            styles.checkBtn,
+            { backgroundColor: set.completed ? colors.primary : "transparent", borderColor: set.completed ? colors.primary : colors.border },
+            set.completed && { opacity: 0.7 },
+          ]}
           onPress={() => {
             closeSwipe();
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
