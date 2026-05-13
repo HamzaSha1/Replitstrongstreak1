@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
   Platform, Modal, Alert, Animated, PanResponder, Image,
+  Keyboard, TouchableWithoutFeedback,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -1288,6 +1289,7 @@ export default function ActiveWorkoutScreen() {
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* PR banner */}
       {prMessage && <PRBanner message={prMessage} onDismiss={() => setPRMessage(null)} />}
@@ -1327,6 +1329,7 @@ export default function ActiveWorkoutScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPad + 90 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         scrollEnabled={!reorderingId}
       >
         {localExercises.map((ex, idx) => (
@@ -1417,6 +1420,7 @@ export default function ActiveWorkoutScreen() {
         <StreakCelebration streak={streak} onDone={() => { setShowStreak(false); router.replace("/"); }} />
       )}
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 
