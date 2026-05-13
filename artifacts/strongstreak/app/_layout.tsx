@@ -6,10 +6,9 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Redirect, Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -23,22 +22,22 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
-function AuthGate({ children }: { children: React.ReactNode }) {
+function AuthRedirect() {
   const { user, isLoading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
 
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0a0a0a" }}>
-        <ActivityIndicator size="large" color="#FF4500" />
-      </View>
-    );
-  }
+  useEffect(() => {
+    if (isLoading) return;
+    const inAuthGroup = segments[0] === "auth";
+    if (!user && !inAuthGroup) {
+      router.replace("/auth/login");
+    } else if (user && inAuthGroup) {
+      router.replace("/(tabs)");
+    }
+  }, [user, isLoading, segments]);
 
-  if (!user) {
-    return <Redirect href="/auth/login" />;
-  }
-
-  return <>{children}</>;
+  return null;
 }
 
 function RootLayoutNav() {
@@ -77,13 +76,12 @@ export default function RootLayout() {
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
               <AuthProvider>
-                <AuthGate>
-                  <WorkoutProvider>
-                    <SocialProvider>
-                      <RootLayoutNav />
-                    </SocialProvider>
-                  </WorkoutProvider>
-                </AuthGate>
+                <WorkoutProvider>
+                  <SocialProvider>
+                    <AuthRedirect />
+                    <RootLayoutNav />
+                  </SocialProvider>
+                </WorkoutProvider>
               </AuthProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
