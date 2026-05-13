@@ -637,7 +637,7 @@ function SummaryModal({ visible, exercises, allSets, elapsed, shareOnFeed, notes
 
 // ─── SetRow ───────────────────────────────────────────────────────────────────
 
-function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompleteRequest, onUndo, onDelete }: {
+function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompleteRequest, onUndo, onDelete, onSwipeActive, onSwipeIdle }: {
   set: LocalSet;
   prevSet?: LocalSet;
   weightUnit: "kg" | "lbs";
@@ -647,6 +647,8 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
   onCompleteRequest: () => void;
   onUndo: () => void;
   onDelete: () => void;
+  onSwipeActive?: () => void;
+  onSwipeIdle?: () => void;
 }) {
   const colors = useColors();
   const isDropset = set.type === "dropset";
@@ -663,17 +665,19 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
     isOpen.current = open;
   };
 
+  const isHorizontal = (g: { dx: number; dy: number }) =>
+    Math.abs(g.dx) > 5 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5;
+
   const panResponder = useRef(
     PanResponder.create({
-      // Don't steal the initial touch — let ScrollView have it
       onStartShouldSetPanResponder: () => false,
       onStartShouldSetPanResponderCapture: () => false,
-      // Only claim gesture when movement is clearly horizontal
-      onMoveShouldSetPanResponder: (_, g) =>
-        Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
-      onMoveShouldSetPanResponderCapture: (_, g) =>
-        Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 2,
-      // Once claimed, don't give the gesture back to ScrollView
+      // Claim on clearly horizontal moves (lower threshold = claims sooner = less scroll bleed)
+      onMoveShouldSetPanResponder: (_, g) => isHorizontal(g),
+      onMoveShouldSetPanResponderCapture: (_, g) => isHorizontal(g),
+      // Disable ScrollView the moment our gesture is granted
+      onPanResponderGrant: () => { onSwipeActive?.(); },
+      // Keep the gesture — don't hand it back to ScrollView
       onPanResponderTerminationRequest: () => false,
       onPanResponderMove: (_, g) => {
         const base = isOpen.current ? -80 : 0;
@@ -681,17 +685,18 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
         swipeX.setValue(dx);
       },
       onPanResponderRelease: (_, g) => {
-        const base = isOpen.current ? -80 : 0;
-        const finalOffset = g.dx + base;
-        // Velocity-based snap takes priority (feels fluid)
-        if (g.vx > 0.4) { snapTo(0, false); return; }
-        if (g.vx < -0.4) { snapTo(-80, true); return; }
+        onSwipeIdle?.();
+        // If row is open: ANY rightward swipe (dx > 5) closes it
+        if (isOpen.current && g.dx > 5) { snapTo(0, false); return; }
+        // Velocity-based snap (fluid flick)
+        if (g.vx > 0.3) { snapTo(0, false); return; }
+        if (g.vx < -0.3) { snapTo(-80, true); return; }
         // Position-based snap
+        const finalOffset = g.dx + (isOpen.current ? -80 : 0);
         if (finalOffset < -40) snapTo(-80, true);
         else snapTo(0, false);
       },
-      // If gesture is taken away (e.g. by system), reset cleanly
-      onPanResponderTerminate: () => snapTo(0, false),
+      onPanResponderTerminate: () => { onSwipeIdle?.(); snapTo(0, false); },
     })
   ).current;
 
@@ -807,7 +812,7 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
 
 // ─── ExerciseCard ─────────────────────────────────────────────────────────────
 
-function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReordering, isCollapsed, isFirst, isLast, onSetsChange, onCompleteRequest, onSwapPress, onExtraChange, onMoveUp, onMoveDown, onStartReorder, onDoneReorder }: {
+function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReordering, isCollapsed, isFirst, isLast, onSetsChange, onCompleteRequest, onSwapPress, onExtraChange, onMoveUp, onMoveDown, onStartReorder, onDoneReorder, onSwipeActive, onSwipeIdle }: {
   exercise: Exercise;
   sets: LocalSet[];
   prevSets: LocalSet[];
@@ -825,6 +830,8 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReorderin
   onMoveDown: () => void;
   onStartReorder: () => void;
   onDoneReorder: () => void;
+  onSwipeActive?: () => void;
+  onSwipeIdle?: () => void;
 }) {
   const colors = useColors();
   const [showHistory, setShowHistory] = useState(false);
@@ -1034,6 +1041,8 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReorderin
           onCompleteRequest={() => onCompleteRequest(i)}
           onUndo={() => undoSet(i)}
           onDelete={() => deleteSet(i)}
+          onSwipeActive={onSwipeActive}
+          onSwipeIdle={onSwipeIdle}
         />
       ))}
 
@@ -1069,6 +1078,7 @@ export default function ActiveWorkoutScreen() {
   const [prMessage, setPRMessage] = useState<string | null>(null);
   const [showStreak, setShowStreak] = useState(false);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const [isAnySwiping, setIsAnySwiping] = useState(false);
 
   const pendingSetTypeRef = useRef<"normal" | "dropset">("normal");
   const pendingRestSecondsRef = useRef(90);
@@ -1330,7 +1340,7 @@ export default function ActiveWorkoutScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
-        scrollEnabled={!reorderingId}
+        scrollEnabled={!reorderingId && !isAnySwiping}
       >
         {localExercises.map((ex, idx) => (
           <ExerciseCard
@@ -1352,6 +1362,8 @@ export default function ActiveWorkoutScreen() {
             onMoveDown={() => moveExercise(ex.id, "down")}
             onStartReorder={() => { setReorderingId(ex.id); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); }}
             onDoneReorder={() => setReorderingId(null)}
+            onSwipeActive={() => setIsAnySwiping(true)}
+            onSwipeIdle={() => setIsAnySwiping(false)}
           />
         ))}
       </ScrollView>
