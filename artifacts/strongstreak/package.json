@@ -61,10 +61,6 @@
     "expo-file-system": "^55.0.19",
     "expo-sharing": "^55.0.18",
     "firebase": "^11.10.0",
-    "@firebase/app": "^0.11.6",
-    "@firebase/auth": "^1.10.8",
-    "@firebase/firestore": "^4.8.0",
-    "@firebase/storage": "^0.13.8",
     "expo-notifications": "~0.31.4"
   }
 }
