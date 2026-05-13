@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Platform, RefreshControl, Alert,
@@ -12,6 +12,8 @@ import * as Haptics from "expo-haptics";
 import { SESSION_COLORS } from "@/components/ExerciseData";
 import type { Split, SplitDay } from "@/context/WorkoutContext";
 import SplitImportExport from "@/components/SplitImportExport";
+import { StreakCalendar } from "@/components/StreakCalendar";
+import { StreakMilestone, isMilestoneStreak } from "@/components/StreakMilestone";
 
 function SessionTypePill({ type }: { type: string }) {
   const colors = useColors();
@@ -104,10 +106,20 @@ function SplitCard({ split, onExport, onDelete }: { split: Split; onExport: () =
 export default function WorkoutsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { splits, streak, longestStreak, activeWorkout, deleteSplit } = useWorkout();
+  const { splits, streak, longestStreak, activeWorkout, deleteSplit, workoutLogs } = useWorkout();
   const [refreshing, setRefreshing] = useState(false);
   const [importExportVisible, setImportExportVisible] = useState(false);
   const [exportSplit, setExportSplit] = useState<Split | undefined>(undefined);
+  const [calendarVisible, setCalendarVisible] = useState(false);
+  const [milestoneVisible, setMilestoneVisible] = useState(false);
+  const prevStreakRef = useRef(streak);
+
+  useEffect(() => {
+    if (streak !== prevStreakRef.current && isMilestoneStreak(streak)) {
+      setMilestoneVisible(true);
+    }
+    prevStreakRef.current = streak;
+  }, [streak]);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -149,10 +161,14 @@ export default function WorkoutsScreen() {
           </Text>
         </View>
         <View style={styles.headerRight}>
-          <View style={[styles.streakChip, { backgroundColor: colors.muted, borderColor: colors.border }]}> 
+          <TouchableOpacity
+            style={[styles.streakChip, { backgroundColor: colors.muted, borderColor: colors.border }]}
+            onPress={() => setCalendarVisible(true)}
+            activeOpacity={0.7}
+          >
             <Ionicons name="flame" size={16} color="#F97316" />
             <Text style={[styles.streakCount, { color: colors.foreground }]}>{streak}</Text>
-          </View>
+          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.importBtn, { backgroundColor: colors.muted, borderColor: colors.border }]}
             onPress={openImport}
@@ -236,6 +252,20 @@ export default function WorkoutsScreen() {
         visible={importExportVisible}
         onClose={() => setImportExportVisible(false)}
         splitToExport={exportSplit}
+      />
+
+      <StreakCalendar
+        visible={calendarVisible}
+        onClose={() => setCalendarVisible(false)}
+        workoutLogs={workoutLogs}
+        streak={streak}
+        longestStreak={longestStreak}
+      />
+
+      <StreakMilestone
+        visible={milestoneVisible}
+        streak={streak}
+        onClose={() => setMilestoneVisible(false)}
       />
     </View>
   );
