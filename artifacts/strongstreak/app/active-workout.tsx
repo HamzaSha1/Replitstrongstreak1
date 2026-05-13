@@ -315,11 +315,12 @@ function StreakCelebration({ streak, onDone }: { streak: number; onDone: () => v
 // ─── RIRPickerModal ───────────────────────────────────────────────────────────
 
 const RIR_OPTIONS = [
-  { value: 0, label: "0", sub: "Failure" },
-  { value: 1, label: "1", sub: "1 left" },
-  { value: 2, label: "2", sub: "2 left" },
-  { value: 3, label: "3", sub: "3 left" },
-  { value: 4, label: "4+", sub: "Easy" },
+  { value: 0,   label: "0",   sub: "Failure"   },
+  { value: 0.5, label: "½",   sub: "Near fail" },
+  { value: 1,   label: "1",   sub: "1 left"    },
+  { value: 2,   label: "2",   sub: "2 left"    },
+  { value: 3,   label: "3",   sub: "3 left"    },
+  { value: 4,   label: "4+",  sub: "Easy"      },
 ];
 
 function RIRPickerModal({ visible, onConfirm, onSkip }: { visible: boolean; onConfirm: (rir: number) => void; onSkip: () => void }) {
@@ -751,7 +752,10 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
 
 // ─── ExerciseCard ─────────────────────────────────────────────────────────────
 
-function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode, isDragging, onSetsChange, onCompleteRequest, onSwapPress, onExtraChange, onStartDrag, onDragMove, onDragEnd, onSwipeActive, onSwipeIdle }: {
+const REP_CHIPS   = ["1","2","3","4","5","6","8","10","12","15","20","AMRAP"] as const;
+const TIME_CHIPS  = ["20s","30s","45s","60s","90s","2min","3min"] as const;
+
+function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode, isDragging, onSetsChange, onCompleteRequest, onSwapPress, onExtraChange, onRepRangeChange, onStartDrag, onDragMove, onDragEnd, onSwipeActive, onSwipeIdle }: {
   exercise: Exercise;
   sets: LocalSet[];
   prevSets: LocalSet[];
@@ -763,6 +767,7 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
   onCompleteRequest: (setIdx: number) => void;
   onSwapPress: () => void;
   onExtraChange: (patch: Partial<ExerciseExtra>) => void;
+  onRepRangeChange: (newReps: string) => void;
   onStartDrag: () => void;
   onDragMove: (dy: number) => void;
   onDragEnd: () => void;
@@ -771,8 +776,36 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
 }) {
   const colors = useColors();
   const [showHistory, setShowHistory] = useState(false);
+  const [repPickerOpen, setRepPickerOpen] = useState(false);
+  const [rangeFirst, setRangeFirst] = useState<string | null>(null);
+  const [pickerMode, setPickerMode] = useState<"reps" | "time">(extra.repMode);
   const completedCount = sets.filter((s) => s.completed).length;
   const isCardio = exercise.type === "cardio";
+
+  // ── Rep range chip handler ─────────────────────────────────────────────────
+  const handleRepChip = (val: string) => {
+    if (pickerMode === "time") {
+      onRepRangeChange(val);
+      onExtraChange({ repMode: "time", timerVisible: true });
+      setRangeFirst(null);
+      return;
+    }
+    if (val === "AMRAP") {
+      onRepRangeChange("AMRAP");
+      setRangeFirst(null);
+      return;
+    }
+    if (!rangeFirst) {
+      setRangeFirst(val);
+    } else if (val === rangeFirst) {
+      onRepRangeChange(val);
+      setRangeFirst(null);
+    } else {
+      const a = parseFloat(rangeFirst), b = parseFloat(val);
+      onRepRangeChange(a <= b ? `${rangeFirst}-${val}` : `${val}-${rangeFirst}`);
+      setRangeFirst(null);
+    }
+  };
 
   // ── Drag-to-reorder via long press ─────────────────────────────────────────
   const isDraggingRef = useRef(false);
@@ -920,13 +953,20 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
 
         {/* Right controls */}
         <View style={styles.exHeaderRight}>
+          {/* Rep range target button */}
           {!isCardio && (
             <TouchableOpacity
-              style={[styles.repModeBtn, { borderColor: colors.border, backgroundColor: extra.repMode === "time" ? colors.primary + "20" : "transparent" }]}
-              onPress={() => onExtraChange({ repMode: extra.repMode === "reps" ? "time" : "reps", timerVisible: extra.repMode === "reps" })}
+              style={[
+                styles.repRangeBtn,
+                {
+                  borderColor: repPickerOpen ? colors.primary : colors.border,
+                  backgroundColor: repPickerOpen ? colors.primary + "18" : "transparent",
+                },
+              ]}
+              onPress={() => setRepPickerOpen((v) => !v)}
             >
-              <Text style={[styles.repModeBtnText, { color: extra.repMode === "time" ? colors.primary : colors.mutedForeground }]}>
-                {extra.repMode === "time" ? "TIME" : "REPS"}
+              <Text style={[styles.repRangeBtnText, { color: repPickerOpen ? colors.primary : colors.mutedForeground }]}>
+                {exercise.reps || "—"}
               </Text>
             </TouchableOpacity>
           )}
@@ -936,6 +976,82 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
           <Text style={[styles.exProgressText, { color: colors.mutedForeground }]}>{completedCount}/{sets.length}</Text>
         </View>
       </View>
+
+      {/* ── Inline Rep Range Picker ──────────────────────────────────────────── */}
+      {repPickerOpen && !isCardio && (
+        <View style={[styles.repPickerWrap, { borderTopColor: colors.border, borderBottomColor: colors.border, backgroundColor: colors.muted + "25" }]}>
+          {/* Mode toggle */}
+          <View style={styles.repPickerModeRow}>
+            {(["reps", "time"] as const).map((m) => (
+              <TouchableOpacity
+                key={m}
+                style={[
+                  styles.repPickerModeBtn,
+                  {
+                    borderColor: pickerMode === m ? colors.primary : colors.border,
+                    backgroundColor: pickerMode === m ? colors.primary + "20" : "transparent",
+                  },
+                ]}
+                onPress={() => {
+                  setPickerMode(m);
+                  setRangeFirst(null);
+                  if (m === "reps") onExtraChange({ repMode: "reps", timerVisible: false });
+                }}
+              >
+                <Text style={[styles.repPickerModeTxt, { color: pickerMode === m ? colors.primary : colors.mutedForeground }]}>
+                  {m === "reps" ? "Reps" : "Time"}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Hint */}
+          <Text style={[styles.repPickerHint, { color: colors.mutedForeground }]}>
+            {pickerMode === "reps"
+              ? rangeFirst
+                ? `Start: ${rangeFirst} — tap an end value (or same to confirm)`
+                : "Tap once for single · tap two numbers for a range"
+              : "Tap a time target"}
+          </Text>
+
+          {/* Chips */}
+          <View style={styles.repChips}>
+            {(pickerMode === "reps" ? REP_CHIPS : TIME_CHIPS).map((val) => {
+              const isStart   = rangeFirst === val;
+              const isCurrent = !rangeFirst && exercise.reps === val;
+              return (
+                <TouchableOpacity
+                  key={val}
+                  style={[
+                    styles.repChip,
+                    {
+                      borderColor: isStart || isCurrent ? colors.primary : colors.border,
+                      backgroundColor: isStart
+                        ? colors.primary + "50"
+                        : isCurrent
+                        ? colors.primary + "22"
+                        : colors.muted,
+                    },
+                  ]}
+                  onPress={() => handleRepChip(val)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.repChipText, { color: isStart || isCurrent ? colors.primary : colors.foreground }]}>
+                    {val}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Current target */}
+          {exercise.reps ? (
+            <Text style={[styles.repPickerCurrent, { color: colors.primary }]}>
+              Target: <Text style={{ fontWeight: "700" }}>{exercise.reps}</Text>
+            </Text>
+          ) : null}
+        </View>
+      )}
 
       {/* Notes section — top of card */}
       <TouchableOpacity
@@ -1372,6 +1488,11 @@ export default function ActiveWorkoutScreen() {
             onCompleteRequest={(setIdx) => handleCompleteRequest(ex.id, setIdx)}
             onSwapPress={() => setSwapTarget(ex.id)}
             onExtraChange={(patch) => updateExtra(ex.id, patch)}
+            onRepRangeChange={(newReps) =>
+              setLocalExercises((prev) =>
+                prev.map((e) => (e.id === ex.id ? { ...e, reps: newReps } : e))
+              )
+            }
             onStartDrag={() => handleDragStart(ex.id)}
             onDragMove={(dy) => handleDragMove(ex.id, dy)}
             onDragEnd={handleDragEnd}
@@ -1529,7 +1650,28 @@ const styles = StyleSheet.create({
   photoThumb: { width: 42, height: 42, borderRadius: 10 },
   photoPlaceholder: { width: 42, height: 42, borderRadius: 10, borderWidth: 1.5, borderStyle: "dashed", alignItems: "center", justifyContent: "center" },
 
-  // Rep mode toggle
+  // Rep range button (in header)
+  repRangeBtn: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
+  repRangeBtnText: { fontSize: 11, fontWeight: "700", fontFamily: "Inter_700Bold" },
+
+  // Inline rep range picker
+  repPickerWrap: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  repPickerModeRow: { flexDirection: "row", gap: 8 },
+  repPickerModeBtn: { flex: 1, paddingVertical: 7, borderRadius: 10, borderWidth: 1, alignItems: "center" },
+  repPickerModeTxt: { fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  repPickerHint: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  repChips: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  repChip: { paddingHorizontal: 11, paddingVertical: 7, borderRadius: 10, borderWidth: 1 },
+  repChipText: { fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
+  repPickerCurrent: { fontSize: 12, fontFamily: "Inter_400Regular" },
+
+  // Rep mode toggle (kept for Time mode indicator, now unused as toggle but styles kept)
   repModeBtn: { borderWidth: 1, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3 },
   repModeBtnText: { fontSize: 9, fontWeight: "700", fontFamily: "Inter_700Bold" },
 
