@@ -8,7 +8,6 @@ import {
   getDoc,
   query,
   where,
-  orderBy,
   onSnapshot,
   increment,
   updateDoc,
@@ -153,10 +152,10 @@ export function SocialProvider({ children }: { children: React.ReactNode }) {
     if (!uid) return;
 
     const unsubPosts = onSnapshot(
-      query(collection(db, "posts"), where("visibility", "==", "public"), orderBy("createdAt", "desc")),
+      query(collection(db, "posts"), where("visibility", "==", "public")),
       (snap) => {
         const all = snap.docs.map((d) => d.data() as Post);
-        // Filter out blocked users
+        all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setPosts(all.filter((p) => !blockedUsers.includes(p.userId)));
         setIsLoaded(true);
       }
