@@ -812,24 +812,21 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
 
 // ─── ExerciseCard ─────────────────────────────────────────────────────────────
 
-function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReordering, isCollapsed, isFirst, isLast, onSetsChange, onCompleteRequest, onSwapPress, onExtraChange, onMoveUp, onMoveDown, onStartReorder, onDoneReorder, onSwipeActive, onSwipeIdle }: {
+function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode, isDragging, onSetsChange, onCompleteRequest, onSwapPress, onExtraChange, onStartDrag, onDragMove, onDragEnd, onSwipeActive, onSwipeIdle }: {
   exercise: Exercise;
   sets: LocalSet[];
   prevSets: LocalSet[];
   weightUnit: "kg" | "lbs";
   extra: ExerciseExtra;
-  isReordering: boolean;
-  isCollapsed: boolean;
-  isFirst: boolean;
-  isLast: boolean;
+  isDragMode: boolean;
+  isDragging: boolean;
   onSetsChange: (sets: LocalSet[]) => void;
   onCompleteRequest: (setIdx: number) => void;
   onSwapPress: () => void;
   onExtraChange: (patch: Partial<ExerciseExtra>) => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  onStartReorder: () => void;
-  onDoneReorder: () => void;
+  onStartDrag: () => void;
+  onDragMove: (dy: number) => void;
+  onDragEnd: () => void;
   onSwipeActive?: () => void;
   onSwipeIdle?: () => void;
 }) {
@@ -838,10 +835,64 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReorderin
   const completedCount = sets.filter((s) => s.completed).length;
   const isCardio = exercise.type === "cardio";
 
-  if (isCollapsed) {
+  // ── Drag-to-reorder via long press ─────────────────────────────────────────
+  const isDraggingRef = useRef(false);
+  const onDragMoveRef = useRef(onDragMove);
+  const onDragEndRef = useRef(onDragEnd);
+  const onStartDragRef = useRef(onStartDrag);
+  useEffect(() => { onDragMoveRef.current = onDragMove; }, [onDragMove]);
+  useEffect(() => { onDragEndRef.current = onDragEnd; }, [onDragEnd]);
+  useEffect(() => { onStartDragRef.current = onStartDrag; }, [onStartDrag]);
+  useEffect(() => { isDraggingRef.current = isDragging; }, [isDragging]);
+
+  const dragPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => isDraggingRef.current,
+      onStartShouldSetPanResponderCapture: () => isDraggingRef.current,
+      onMoveShouldSetPanResponder: () => isDraggingRef.current,
+      onMoveShouldSetPanResponderCapture: () => isDraggingRef.current,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderMove: (_, g) => { onDragMoveRef.current(g.dy); },
+      onPanResponderRelease: () => { isDraggingRef.current = false; onDragEndRef.current(); },
+      onPanResponderTerminate: () => { isDraggingRef.current = false; onDragEndRef.current(); },
+    })
+  ).current;
+
+  const handleLongPressName = () => {
+    isDraggingRef.current = true; // set synchronously so PanResponder is ready immediately
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    onStartDragRef.current();
+  };
+
+  // ── Drag mode: all cards collapse to name-only rows ───────────────────────
+  if (isDragMode) {
     return (
-      <View style={[styles.exerciseCard, { backgroundColor: colors.muted + "30", borderColor: colors.border, paddingVertical: 12, paddingHorizontal: 14 }]}>
-        <Text style={[styles.exName, { color: colors.mutedForeground }]}>{exercise.name}</Text>
+      <View
+        style={[
+          styles.dragCollapsedCard,
+          {
+            borderColor: isDragging ? colors.primary : colors.border,
+            backgroundColor: isDragging ? colors.primary + "18" : colors.muted + "25",
+          },
+        ]}
+        {...(isDragging ? dragPanResponder.panHandlers : {})}
+      >
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          onLongPress={handleLongPressName}
+          delayLongPress={500}
+          activeOpacity={0.7}
+          disabled={isDragging}
+        >
+          <Text style={[styles.exName, { color: isDragging ? colors.primary : colors.mutedForeground }]}>
+            {exercise.name}
+          </Text>
+        </TouchableOpacity>
+        {isDragging ? (
+          <Ionicons name="reorder-three-outline" size={20} color={colors.primary + "80"} />
+        ) : (
+          <Ionicons name="reorder-three-outline" size={16} color={colors.mutedForeground + "40"} />
+        )}
       </View>
     );
   }
@@ -898,7 +949,7 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReorderin
   };
 
   return (
-    <View style={[styles.exerciseCard, { backgroundColor: colors.card, borderColor: isReordering ? colors.primary : colors.border }]}>
+    <View style={[styles.exerciseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
       {/* Header */}
       <View style={styles.exHeader}>
         {/* Photo thumbnail / camera button */}
@@ -912,8 +963,14 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReorderin
           )}
         </TouchableOpacity>
 
-        {/* Name + meta */}
-        <TouchableOpacity style={{ flex: 1 }} onPress={() => setShowHistory((v) => !v)} activeOpacity={0.7}>
+        {/* Name + meta — long press to enter drag/reorder mode */}
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          onPress={() => setShowHistory((v) => !v)}
+          onLongPress={handleLongPressName}
+          delayLongPress={500}
+          activeOpacity={0.7}
+        >
           <Text style={[styles.exName, { color: colors.foreground }]}>{exercise.name}</Text>
           <Text style={[styles.exMeta, { color: colors.mutedForeground }]}>
             {isCardio
@@ -923,42 +980,22 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isReorderin
         </TouchableOpacity>
 
         {/* Right controls */}
-        {isReordering ? (
-          <View style={styles.reorderControls}>
-            <TouchableOpacity onPress={onMoveUp} disabled={isFirst} style={[styles.reorderArrow, { opacity: isFirst ? 0.3 : 1 }]}>
-              <Ionicons name="chevron-up" size={20} color={colors.primary} />
+        <View style={styles.exHeaderRight}>
+          {!isCardio && (
+            <TouchableOpacity
+              style={[styles.repModeBtn, { borderColor: colors.border, backgroundColor: extra.repMode === "time" ? colors.primary + "20" : "transparent" }]}
+              onPress={() => onExtraChange({ repMode: extra.repMode === "reps" ? "time" : "reps", timerVisible: extra.repMode === "reps" })}
+            >
+              <Text style={[styles.repModeBtnText, { color: extra.repMode === "time" ? colors.primary : colors.mutedForeground }]}>
+                {extra.repMode === "time" ? "TIME" : "REPS"}
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={onMoveDown} disabled={isLast} style={[styles.reorderArrow, { opacity: isLast ? 0.3 : 1 }]}>
-              <Ionicons name="chevron-down" size={20} color={colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={onDoneReorder} style={[styles.reorderDoneBtn, { backgroundColor: colors.primary + "20" }]}>
-              <Text style={[styles.reorderDoneText, { color: colors.primary }]}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.exHeaderRight}>
-            {/* Rep mode toggle */}
-            {!isCardio && (
-              <TouchableOpacity
-                style={[styles.repModeBtn, { borderColor: colors.border, backgroundColor: extra.repMode === "time" ? colors.primary + "20" : "transparent" }]}
-                onPress={() => onExtraChange({ repMode: extra.repMode === "reps" ? "time" : "reps", timerVisible: extra.repMode === "reps" })}
-              >
-                <Text style={[styles.repModeBtnText, { color: extra.repMode === "time" ? colors.primary : colors.mutedForeground }]}>
-                  {extra.repMode === "time" ? "TIME" : "REPS"}
-                </Text>
-              </TouchableOpacity>
-            )}
-            {/* Swap */}
-            <TouchableOpacity style={[styles.swapBtn, { borderColor: colors.border }]} onPress={onSwapPress}>
-              <Ionicons name="swap-horizontal-outline" size={15} color={colors.mutedForeground} />
-            </TouchableOpacity>
-            {/* Drag handle — long press to reorder */}
-            <TouchableOpacity onLongPress={onStartReorder} delayLongPress={500} style={styles.dragHandle}>
-              <Ionicons name="reorder-three-outline" size={20} color={colors.mutedForeground} />
-            </TouchableOpacity>
-            <Text style={[styles.exProgressText, { color: colors.mutedForeground }]}>{completedCount}/{sets.length}</Text>
-          </View>
-        )}
+          )}
+          <TouchableOpacity style={[styles.swapBtn, { borderColor: colors.border }]} onPress={onSwapPress}>
+            <Ionicons name="swap-horizontal-outline" size={15} color={colors.mutedForeground} />
+          </TouchableOpacity>
+          <Text style={[styles.exProgressText, { color: colors.mutedForeground }]}>{completedCount}/{sets.length}</Text>
+        </View>
       </View>
 
       {/* Notes section — top of card */}
@@ -1077,8 +1114,11 @@ export default function ActiveWorkoutScreen() {
   const [shareOnFeed, setShareOnFeed] = useState(true);
   const [prMessage, setPRMessage] = useState<string | null>(null);
   const [showStreak, setShowStreak] = useState(false);
-  const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const [dragMode, setDragMode] = useState(false);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
   const [isAnySwiping, setIsAnySwiping] = useState(false);
+  const lastSwapYRef = useRef(0);
+  const DRAG_ITEM_HEIGHT = 56; // collapsed card height + gap
 
   const pendingSetTypeRef = useRef<"normal" | "dropset">("normal");
   const pendingRestSecondsRef = useRef(90);
@@ -1146,18 +1186,41 @@ export default function ActiveWorkoutScreen() {
     setExtras((prev) => ({ ...prev, [exId]: { ...(prev[exId] ?? defaultExtra()), ...patch } }));
   };
 
-  const moveExercise = (id: string, direction: "up" | "down") => {
-    setLocalExercises((prev) => {
-      const idx = prev.findIndex((e) => e.id === id);
-      if (idx === -1) return prev;
-      const newIdx = direction === "up" ? idx - 1 : idx + 1;
-      if (newIdx < 0 || newIdx >= prev.length) return prev;
-      const next = [...prev];
-      const [item] = next.splice(idx, 1);
-      next.splice(newIdx, 0, item);
-      return next;
-    });
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  const handleDragStart = (exId: string) => {
+    lastSwapYRef.current = 0;
+    setDragMode(true);
+    setDraggingId(exId);
+  };
+
+  const handleDragMove = (exId: string, dy: number) => {
+    const delta = dy - lastSwapYRef.current;
+    if (delta > DRAG_ITEM_HEIGHT / 2) {
+      setLocalExercises((prev) => {
+        const idx = prev.findIndex((e) => e.id === exId);
+        if (idx >= prev.length - 1) return prev;
+        const next = [...prev];
+        [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+        return next;
+      });
+      lastSwapYRef.current += DRAG_ITEM_HEIGHT;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } else if (delta < -DRAG_ITEM_HEIGHT / 2) {
+      setLocalExercises((prev) => {
+        const idx = prev.findIndex((e) => e.id === exId);
+        if (idx <= 0) return prev;
+        const next = [...prev];
+        [next[idx], next[idx - 1]] = [next[idx - 1], next[idx]];
+        return next;
+      });
+      lastSwapYRef.current -= DRAG_ITEM_HEIGHT;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDragMode(false);
+    setDraggingId(null);
+    lastSwapYRef.current = 0;
   };
 
   // ─── Set complete flow ──────────────────────────────────────────────────────
@@ -1327,10 +1390,12 @@ export default function ActiveWorkoutScreen() {
       </View>
       <Text style={[styles.progressText, { color: colors.mutedForeground }]}>{completedTotal}/{totalSets} sets</Text>
 
-      {/* Reorder hint */}
-      {reorderingId && (
+      {/* Drag hint banner */}
+      {dragMode && (
         <View style={[styles.reorderBanner, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30" }]}>
-          <Text style={[styles.reorderBannerText, { color: colors.primary }]}>Use ↑ ↓ to reorder · tap Done when finished</Text>
+          <Text style={[styles.reorderBannerText, { color: colors.primary }]}>
+            Drag up or down · release to drop
+          </Text>
         </View>
       )}
 
@@ -1340,7 +1405,7 @@ export default function ActiveWorkoutScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
-        scrollEnabled={!reorderingId && !isAnySwiping}
+        scrollEnabled={!dragMode && !isAnySwiping}
       >
         {localExercises.map((ex, idx) => (
           <ExerciseCard
@@ -1350,18 +1415,15 @@ export default function ActiveWorkoutScreen() {
             prevSets={getPrevSets(ex.name, workoutLogs)}
             weightUnit={weightUnit}
             extra={extras[ex.id] ?? defaultExtra()}
-            isReordering={reorderingId === ex.id}
-            isCollapsed={reorderingId !== null && reorderingId !== ex.id}
-            isFirst={idx === 0}
-            isLast={idx === localExercises.length - 1}
+            isDragMode={dragMode}
+            isDragging={draggingId === ex.id}
             onSetsChange={(newSets) => setAllSets((prev) => ({ ...prev, [ex.id]: newSets }))}
             onCompleteRequest={(setIdx) => handleCompleteRequest(ex.id, setIdx)}
             onSwapPress={() => setSwapTarget(ex.id)}
             onExtraChange={(patch) => updateExtra(ex.id, patch)}
-            onMoveUp={() => moveExercise(ex.id, "up")}
-            onMoveDown={() => moveExercise(ex.id, "down")}
-            onStartReorder={() => { setReorderingId(ex.id); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); }}
-            onDoneReorder={() => setReorderingId(null)}
+            onStartDrag={() => handleDragStart(ex.id)}
+            onDragMove={(dy) => handleDragMove(ex.id, dy)}
+            onDragEnd={handleDragEnd}
             onSwipeActive={() => setIsAnySwiping(true)}
             onSwipeIdle={() => setIsAnySwiping(false)}
           />
@@ -1499,6 +1561,11 @@ const styles = StyleSheet.create({
 
   // Exercise card
   exerciseCard: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
+  dragCollapsedCard: {
+    borderRadius: 14, borderWidth: 1, overflow: "hidden",
+    flexDirection: "row", alignItems: "center",
+    paddingVertical: 14, paddingHorizontal: 16, gap: 10,
+  },
   exHeader: { flexDirection: "row", alignItems: "center", padding: 12, gap: 10 },
   exName: { fontSize: 15, fontWeight: "700", fontFamily: "Inter_700Bold" },
   exMeta: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
