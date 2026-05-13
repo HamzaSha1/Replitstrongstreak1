@@ -1,17 +1,36 @@
-import React, { createContext, useContext, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface Exercise {
   id: string;
   name: string;
   muscleGroup: string;
   sets: number;
-  reps: string;
+  reps: string;          // e.g. "8-12"
   weight: number;
   unit: "kg" | "lbs";
   restSeconds: number;
   notes: string;
   type: "strength" | "cardio";
+  rpe?: number;          // 1-10 Rate of Perceived Exertion
+  dropSetCount?: number; // how many drop sets
+  supersetGroup?: string;
 }
 
 export interface SplitDay {
@@ -28,6 +47,8 @@ export interface Split {
   createdAt: string;
 }
 
+export type SetType = "normal" | "dropset";
+
 export interface SetLog {
   id: string;
   exerciseId: string;
@@ -38,10 +59,14 @@ export interface SetLog {
   unit: "kg" | "lbs";
   completed: boolean;
   timestamp: string;
+  type: SetType;
+  rir?: number;   // Reps In Reserve (0-5)
+  rpe?: number;   // Rate of Perceived Exertion (1-10)
 }
 
 export interface WorkoutLog {
   id: string;
+  userId: string;
   splitId: string;
   splitName: string;
   dayLabel: string;
@@ -55,6 +80,7 @@ export interface WorkoutLog {
 
 export interface WeightEntry {
   id: string;
+  userId: string;
   date: string;
   weight: number;
   unit: "kg" | "lbs";
@@ -83,24 +109,19 @@ interface WorkoutContextType {
   deleteSplit: (splitId: string) => Promise<void>;
   startWorkout: (split: Split, day: SplitDay) => void;
   logSet: (set: Omit<SetLog, "id" | "timestamp">) => void;
+  updateSet: (setId: string, updates: Partial<SetLog>) => void;
   finishWorkout: (notes: string) => Promise<WorkoutLog>;
   cancelWorkout: () => void;
-  addWeightEntry: (entry: Omit<WeightEntry, "id">) => Promise<void>;
+  addWeightEntry: (entry: Omit<WeightEntry, "id" | "userId">) => Promise<void>;
   deleteWeightEntry: (id: string) => Promise<void>;
   weightUnit: "kg" | "lbs";
-  setWeightUnit: (unit: "kg" | "lbs") => Promise<void>;
+  setWeightUnit: (unit: "kg" | "lbs") => void;
   streak: number;
   longestStreak: number;
+  getLastWeightForExercise: (exerciseName: string) => { weight: number; unit: "kg" | "lbs" } | null;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | null>(null);
-
-const STORAGE_KEYS = {
-  SPLITS: "strongstreak_splits",
-  LOGS: "strongstreak_logs",
-  WEIGHT_ENTRIES: "strongstreak_weight",
-  WEIGHT_UNIT: "strongstreak_weight_unit",
-};
 
 function generateId(): string {
   return Date.now().toString() + Math.random().toString(36).substr(2, 9);
@@ -110,11 +131,8 @@ function calculateStreaks(logs: WorkoutLog[]): { streak: number; longestStreak: 
   if (logs.length === 0) return { streak: 0, longestStreak: 0 };
 
   const workoutDates = new Set(
-    logs
-      .filter((l) => l.finishedAt)
-      .map((l) => l.startedAt.split("T")[0])
+    logs.filter((l) => l.finishedAt).map((l) => l.startedAt.split("T")[0])
   );
-
   const sortedDates = Array.from(workoutDates).sort().reverse();
   if (sortedDates.length === 0) return { streak: 0, longestStreak: 0 };
 
@@ -127,12 +145,7 @@ function calculateStreaks(logs: WorkoutLog[]): { streak: number; longestStreak: 
     for (const dateStr of sortedDates) {
       const d = new Date(dateStr);
       const diff = Math.round((current.getTime() - d.getTime()) / 86400000);
-      if (diff <= 1) {
-        streak++;
-        current = d;
-      } else {
-        break;
-      }
+      if (diff <= 1) { streak++; current = d; } else break;
     }
   }
 
@@ -143,12 +156,8 @@ function calculateStreaks(logs: WorkoutLog[]): { streak: number; longestStreak: 
     const prev = new Date(ascending[i - 1]);
     const curr = new Date(ascending[i]);
     const diff = Math.round((curr.getTime() - prev.getTime()) / 86400000);
-    if (diff === 1) {
-      currentRun++;
-      if (currentRun > longestStreak) longestStreak = currentRun;
-    } else {
-      currentRun = 1;
-    }
+    if (diff === 1) { currentRun++; if (currentRun > longestStreak) longestStreak = currentRun; }
+    else currentRun = 1;
   }
   if (longestStreak === 0 && ascending.length > 0) longestStreak = 1;
 
@@ -156,6 +165,9 @@ function calculateStreaks(logs: WorkoutLog[]): { streak: number; longestStreak: 
 }
 
 export function WorkoutProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const uid = user?.uid ?? "";
+
   const [splits, setSplits] = useState<Split[]>([]);
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [weightEntries, setWeightEntries] = useState<WeightEntry[]>([]);
@@ -163,57 +175,53 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const [weightUnit, setWeightUnitState] = useState<"kg" | "lbs">("kg");
   const [isLoaded, setIsLoaded] = useState(false);
 
-  React.useEffect(() => {
-    loadData();
-  }, []);
+  // Real-time listeners
+  useEffect(() => {
+    if (!uid) return;
 
-  const loadData = async () => {
-    try {
-      const [splitsRaw, logsRaw, weightRaw, unitRaw] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEYS.SPLITS),
-        AsyncStorage.getItem(STORAGE_KEYS.LOGS),
-        AsyncStorage.getItem(STORAGE_KEYS.WEIGHT_ENTRIES),
-        AsyncStorage.getItem(STORAGE_KEYS.WEIGHT_UNIT),
-      ]);
-      if (splitsRaw) setSplits(JSON.parse(splitsRaw));
-      if (logsRaw) setWorkoutLogs(JSON.parse(logsRaw));
-      if (weightRaw) setWeightEntries(JSON.parse(weightRaw));
-      if (unitRaw) setWeightUnitState(unitRaw as "kg" | "lbs");
-    } catch {
-    } finally {
-      setIsLoaded(true);
-    }
-  };
+    const unsubSplits = onSnapshot(
+      query(collection(db, "splits"), where("userId", "==", uid)),
+      (snap) => {
+        setSplits(snap.docs.map((d) => d.data() as Split));
+      }
+    );
 
-  const saveSplits = async (data: Split[]) => {
-    await AsyncStorage.setItem(STORAGE_KEYS.SPLITS, JSON.stringify(data));
-  };
+    const unsubLogs = onSnapshot(
+      query(collection(db, "workoutLogs"), where("userId", "==", uid), orderBy("startedAt", "desc")),
+      (snap) => {
+        setWorkoutLogs(snap.docs.map((d) => d.data() as WorkoutLog));
+        setIsLoaded(true);
+      }
+    );
 
-  const saveLogs = async (data: WorkoutLog[]) => {
-    await AsyncStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(data));
-  };
+    const unsubWeight = onSnapshot(
+      query(collection(db, "weightEntries"), where("userId", "==", uid), orderBy("date", "desc")),
+      (snap) => {
+        setWeightEntries(snap.docs.map((d) => d.data() as WeightEntry));
+      }
+    );
 
-  const saveWeightEntries = async (data: WeightEntry[]) => {
-    await AsyncStorage.setItem(STORAGE_KEYS.WEIGHT_ENTRIES, JSON.stringify(data));
-  };
+    setIsLoaded(false);
+    return () => { unsubSplits(); unsubLogs(); unsubWeight(); };
+  }, [uid]);
 
   const addSplit = async (split: Omit<Split, "id" | "createdAt">) => {
-    const newSplit: Split = { ...split, id: generateId(), createdAt: new Date().toISOString() };
-    const updated = [...splits, newSplit];
-    setSplits(updated);
-    await saveSplits(updated);
+    const id = generateId();
+    const newSplit: Split & { userId: string } = {
+      ...split,
+      id,
+      userId: uid,
+      createdAt: new Date().toISOString(),
+    };
+    await setDoc(doc(db, "splits", id), newSplit);
   };
 
   const updateSplit = async (split: Split) => {
-    const updated = splits.map((s) => (s.id === split.id ? split : s));
-    setSplits(updated);
-    await saveSplits(updated);
+    await setDoc(doc(db, "splits", split.id), { ...split, userId: uid }, { merge: true });
   };
 
   const deleteSplit = async (splitId: string) => {
-    const updated = splits.filter((s) => s.id !== splitId);
-    setSplits(updated);
-    await saveSplits(updated);
+    await deleteDoc(doc(db, "splits", splitId));
   };
 
   const startWorkout = (split: Split, day: SplitDay) => {
@@ -235,14 +243,26 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     setActiveWorkout((prev) => prev ? { ...prev, setLogs: [...prev.setLogs, newSet] } : null);
   };
 
+  const updateSet = (setId: string, updates: Partial<SetLog>) => {
+    setActiveWorkout((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        setLogs: prev.setLogs.map((s) => (s.id === setId ? { ...s, ...updates } : s)),
+      };
+    });
+  };
+
   const finishWorkout = async (notes: string): Promise<WorkoutLog> => {
     if (!activeWorkout) throw new Error("No active workout");
     const finishedAt = new Date().toISOString();
     const durationMs = new Date(finishedAt).getTime() - new Date(activeWorkout.startedAt).getTime();
     const durationMinutes = Math.round(durationMs / 60000);
+    const id = generateId();
 
     const log: WorkoutLog = {
-      id: generateId(),
+      id,
+      userId: uid,
       splitId: activeWorkout.splitId,
       splitName: activeWorkout.splitName,
       dayLabel: activeWorkout.dayLabel,
@@ -254,58 +274,65 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       notes,
     };
 
-    const updated = [log, ...workoutLogs];
-    setWorkoutLogs(updated);
-    await saveLogs(updated);
+    await setDoc(doc(db, "workoutLogs", id), log);
     setActiveWorkout(null);
     return log;
   };
 
-  const cancelWorkout = () => {
-    setActiveWorkout(null);
-  };
+  const cancelWorkout = () => setActiveWorkout(null);
 
-  const addWeightEntry = async (entry: Omit<WeightEntry, "id">) => {
-    const newEntry = { ...entry, id: generateId() };
-    const updated = [...weightEntries, newEntry];
-    setWeightEntries(updated);
-    await saveWeightEntries(updated);
+  const addWeightEntry = async (entry: Omit<WeightEntry, "id" | "userId">) => {
+    const id = generateId();
+    const newEntry: WeightEntry = { ...entry, id, userId: uid };
+    await setDoc(doc(db, "weightEntries", id), newEntry);
   };
 
   const deleteWeightEntry = async (id: string) => {
-    const updated = weightEntries.filter((entry) => entry.id !== id);
-    setWeightEntries(updated);
-    await saveWeightEntries(updated);
+    await deleteDoc(doc(db, "weightEntries", id));
   };
 
-  const setWeightUnit = async (unit: "kg" | "lbs") => {
+  const setWeightUnit = (unit: "kg" | "lbs") => {
     setWeightUnitState(unit);
-    await AsyncStorage.setItem(STORAGE_KEYS.WEIGHT_UNIT, unit);
+  };
+
+  // Returns the most recent logged weight for an exercise (for weight suggestions)
+  const getLastWeightForExercise = (exerciseName: string): { weight: number; unit: "kg" | "lbs" } | null => {
+    for (const log of workoutLogs) {
+      const match = log.setLogs.find(
+        (s) => s.exerciseName.toLowerCase() === exerciseName.toLowerCase() && s.completed
+      );
+      if (match) return { weight: match.weight, unit: match.unit };
+    }
+    return null;
   };
 
   const { streak, longestStreak } = calculateStreaks(workoutLogs);
 
   return (
-    <WorkoutContext.Provider value={{
-      splits,
-      workoutLogs,
-      weightEntries,
-      activeWorkout,
-      isLoaded,
-      addSplit,
-      updateSplit,
-      deleteSplit,
-      startWorkout,
-      logSet,
-      finishWorkout,
-      cancelWorkout,
-      addWeightEntry,
-      deleteWeightEntry,
-      weightUnit,
-      setWeightUnit,
-      streak,
-      longestStreak,
-    }}>
+    <WorkoutContext.Provider
+      value={{
+        splits,
+        workoutLogs,
+        weightEntries,
+        activeWorkout,
+        isLoaded,
+        addSplit,
+        updateSplit,
+        deleteSplit,
+        startWorkout,
+        logSet,
+        updateSet,
+        finishWorkout,
+        cancelWorkout,
+        addWeightEntry,
+        deleteWeightEntry,
+        weightUnit,
+        setWeightUnit,
+        streak,
+        longestStreak,
+        getLastWeightForExercise,
+      }}
+    >
       {children}
     </WorkoutContext.Provider>
   );
@@ -313,8 +340,6 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
 
 export function useWorkout() {
   const context = useContext(WorkoutContext);
-  if (!context) {
-    throw new Error("useWorkout must be used within a WorkoutProvider");
-  }
+  if (!context) throw new Error("useWorkout must be used within a WorkoutProvider");
   return context;
 }

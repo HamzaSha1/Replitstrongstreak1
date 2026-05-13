@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth() { return request.auth != null; }
+    function isOwner(uid) { return request.auth.uid == uid; }
+    function isAdmin() {
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // Users — anyone logged in can read; only the owner can write
+    match /users/{uid} {
+      allow read: if isAuth();
+      allow write: if isOwner(uid);
+    }
+
+    // Splits — private to owner
+    match /splits/{id} {
+      allow read, write: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Workout logs — private to owner
+    match /workoutLogs/{id} {
+      allow read, write: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Weight entries — private to owner
+    match /weightEntries/{id} {
+      allow read, write: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Posts — public posts readable by all auth users; write only by owner
+    match /posts/{id} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuth() && (
+        resource.data.userId == request.auth.uid ||
+        // Allow anyone to update likesCount/likedBy
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount', 'likedBy'])
+      );
+      allow delete: if isAuth() && resource.data.userId == request.auth.uid;
+    }
+
+    // Follows — readable by auth; writable by follower
+    match /follows/{id} {
+      allow read: if isAuth();
+      allow create, delete: if isAuth() && request.auth.uid == resource.data.followerId;
+      allow create: if isAuth() && request.auth.uid == request.resource.data.followerId;
+    }
+
+    // Follow requests
+    match /followRequests/{id} {
+      allow read: if isAuth() && (
+        resource.data.requesterId == request.auth.uid ||
+        resource.data.targetId == request.auth.uid
+      );
+      allow create: if isAuth() && request.resource.data.requesterId == request.auth.uid;
+      allow update: if isAuth() && resource.data.targetId == request.auth.uid;
+    }
+
+    // Blocks — private to blocker
+    match /blocks/{id} {
+      allow read, write: if isAuth() && resource.data.blockerId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.blockerId == request.auth.uid;
+    }
+
+    // Groups — readable by members; writable by members
+    match /groups/{id} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth() && resource.data.memberIds.hasAny([request.auth.uid]);
+      allow delete: if isAuth() && resource.data.createdBy == request.auth.uid;
+    }
+
+    // Reports — create only; admin can read all
+    match /reports/{id} {
+      allow create: if isAuth() && request.resource.data.reporterId == request.auth.uid;
+      allow read, write: if isAdmin();
+    }
+  }
+}

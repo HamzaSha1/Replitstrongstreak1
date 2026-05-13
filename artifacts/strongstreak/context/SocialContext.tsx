@@ -1,5 +1,23 @@
-import React, { createContext, useContext, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import {
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  getDocs,
+  getDoc,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  increment,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface UserProfile {
   id: string;
@@ -27,9 +45,11 @@ export interface Post {
     durationMinutes: number;
     exerciseCount: number;
   };
+  likesCount: number;
   likedBy: string[];
   createdAt: string;
   imageUri?: string;
+  visibility: "public" | "private";
 }
 
 export interface Group {
@@ -42,6 +62,7 @@ export interface Group {
   members: GroupMember[];
   difficulty: string;
   createdAt: string;
+  groupStreak: number;
 }
 
 export interface GroupMember {
@@ -51,33 +72,45 @@ export interface GroupMember {
   joinedAt: string;
 }
 
+export interface FollowRequest {
+  id: string;
+  requesterId: string;
+  requesterName: string;
+  requesterHandle: string;
+  targetId: string;
+  status: "pending" | "approved" | "denied";
+  createdAt: string;
+}
+
 interface SocialContextType {
-  myProfile: UserProfile;
+  myProfile: UserProfile | null;
   posts: Post[];
   groups: Group[];
   myGroups: string[];
   following: string[];
+  followers: string[];
+  blockedUsers: string[];
+  pendingFollowRequests: FollowRequest[];
   isLoaded: boolean;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
-  addPost: (post: Omit<Post, "id" | "createdAt" | "likedBy" | "userId" | "userDisplayName" | "userHandle">) => Promise<void>;
+  addPost: (post: Omit<Post, "id" | "createdAt" | "likesCount" | "likedBy" | "userId" | "userDisplayName" | "userHandle">) => Promise<void>;
   deletePost: (id: string) => Promise<void>;
   toggleLike: (postId: string) => Promise<void>;
-  createGroup: (group: Omit<Group, "id" | "createdAt" | "members" | "memberCount" | "inviteCode">) => Promise<Group>;
+  createGroup: (group: Omit<Group, "id" | "createdAt" | "members" | "memberCount" | "inviteCode" | "groupStreak">) => Promise<Group>;
   joinGroup: (inviteCode: string) => Promise<void>;
   leaveGroup: (groupId: string) => Promise<void>;
+  followUser: (targetId: string, isPrivate: boolean) => Promise<void>;
+  unfollowUser: (targetId: string) => Promise<void>;
+  blockUser: (targetId: string) => Promise<void>;
+  unblockUser: (targetId: string) => Promise<void>;
+  reportPost: (postId: string, reason: string) => Promise<void>;
+  reportUser: (userId: string, reason: string) => Promise<void>;
+  approveFollowRequest: (requestId: string) => Promise<void>;
+  denyFollowRequest: (requestId: string) => Promise<void>;
+  getAllUsers: () => Promise<UserProfile[]>;
 }
 
 const SocialContext = createContext<SocialContextType | null>(null);
-
-const MY_USER_ID = "local_user";
-
-const STORAGE_KEYS = {
-  PROFILE: "ss_profile",
-  POSTS: "ss_posts",
-  GROUPS: "ss_groups",
-  MY_GROUPS: "ss_my_groups",
-  FOLLOWING: "ss_following",
-};
 
 function generateId() {
   return Date.now().toString() + Math.random().toString(36).substr(2, 9);
@@ -87,181 +120,287 @@ function generateCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-const DEFAULT_PROFILE: UserProfile = {
-  id: MY_USER_ID,
-  displayName: "You",
-  handle: "strongstreak_user",
-  bio: "Fitness enthusiast",
-  isPrivate: false,
-  fitnessGoal: "Build muscle",
-  followersCount: 0,
-  followingCount: 0,
-  postsCount: 0,
-};
-
-const SAMPLE_POSTS: Post[] = [
-  {
-    id: "sample1",
-    userId: "user2",
-    userDisplayName: "Alex Fitness",
-    userHandle: "alexfitness",
-    content: "Crushed legs day today! 🔥 New PR on squats — 140kg for 5 reps. Consistency pays off.",
-    likedBy: [],
-    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-    workoutSummary: { splitName: "PPL", sessionType: "Legs", durationMinutes: 72, exerciseCount: 6 },
-  },
-  {
-    id: "sample2",
-    userId: "user3",
-    userDisplayName: "Sarah Lifts",
-    userHandle: "sarahlifts",
-    content: "Week 4 of my cut complete. Down 3kg and strength is holding. The streak keeps me accountable.",
-    likedBy: [MY_USER_ID],
-    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-  },
-  {
-    id: "sample3",
-    userId: "user4",
-    userDisplayName: "Marcus Power",
-    userHandle: "marcuspower",
-    content: "Rest day well earned. 6 days of training this week. Body needs recovery too.",
-    likedBy: [],
-    createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
-  },
-];
-
 export function SocialProvider({ children }: { children: React.ReactNode }) {
-  const [myProfile, setMyProfile] = useState<UserProfile>(DEFAULT_PROFILE);
-  const [posts, setPosts] = useState<Post[]>(SAMPLE_POSTS);
+  const { user, appUser } = useAuth();
+  const uid = user?.uid ?? "";
+
+  const [posts, setPosts] = useState<Post[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [myGroups, setMyGroups] = useState<string[]>([]);
   const [following, setFollowing] = useState<string[]>([]);
+  const [followers, setFollowers] = useState<string[]>([]);
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+  const [pendingFollowRequests, setPendingFollowRequests] = useState<FollowRequest[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  React.useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [profileRaw, postsRaw, groupsRaw, myGroupsRaw, followingRaw] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEYS.PROFILE),
-        AsyncStorage.getItem(STORAGE_KEYS.POSTS),
-        AsyncStorage.getItem(STORAGE_KEYS.GROUPS),
-        AsyncStorage.getItem(STORAGE_KEYS.MY_GROUPS),
-        AsyncStorage.getItem(STORAGE_KEYS.FOLLOWING),
-      ]);
-      if (profileRaw) setMyProfile(JSON.parse(profileRaw));
-      if (postsRaw) {
-        const stored = JSON.parse(postsRaw);
-        setPosts([...stored, ...SAMPLE_POSTS.filter((s) => !stored.find((p: Post) => p.id === s.id))]);
+  const myProfile: UserProfile | null = appUser
+    ? {
+        id: appUser.uid,
+        displayName: appUser.displayName,
+        handle: appUser.handle,
+        bio: appUser.bio,
+        avatarUri: appUser.avatarUri,
+        isPrivate: appUser.isPrivate,
+        fitnessGoal: appUser.fitnessGoal,
+        followersCount: appUser.followersCount,
+        followingCount: appUser.followingCount,
+        postsCount: appUser.postsCount,
       }
-      if (groupsRaw) setGroups(JSON.parse(groupsRaw));
-      if (myGroupsRaw) setMyGroups(JSON.parse(myGroupsRaw));
-      if (followingRaw) setFollowing(JSON.parse(followingRaw));
-    } catch (e) {
-    } finally {
-      setIsLoaded(true);
-    }
-  };
+    : null;
+
+  // Public feed listener
+  useEffect(() => {
+    if (!uid) return;
+
+    const unsubPosts = onSnapshot(
+      query(collection(db, "posts"), where("visibility", "==", "public"), orderBy("createdAt", "desc")),
+      (snap) => {
+        const all = snap.docs.map((d) => d.data() as Post);
+        // Filter out blocked users
+        setPosts(all.filter((p) => !blockedUsers.includes(p.userId)));
+        setIsLoaded(true);
+      }
+    );
+
+    const unsubFollowing = onSnapshot(
+      query(collection(db, "follows"), where("followerId", "==", uid)),
+      (snap) => setFollowing(snap.docs.map((d) => d.data().followingId as string))
+    );
+
+    const unsubFollowers = onSnapshot(
+      query(collection(db, "follows"), where("followingId", "==", uid)),
+      (snap) => setFollowers(snap.docs.map((d) => d.data().followerId as string))
+    );
+
+    const unsubBlocks = onSnapshot(
+      query(collection(db, "blocks"), where("blockerId", "==", uid)),
+      (snap) => setBlockedUsers(snap.docs.map((d) => d.data().blockedId as string))
+    );
+
+    const unsubRequests = onSnapshot(
+      query(collection(db, "followRequests"), where("targetId", "==", uid), where("status", "==", "pending")),
+      (snap) => setPendingFollowRequests(snap.docs.map((d) => d.data() as FollowRequest))
+    );
+
+    const unsubGroups = onSnapshot(
+      query(collection(db, "groups"), where("members", "array-contains", uid)),
+      (snap) => {
+        const g = snap.docs.map((d) => d.data() as Group);
+        setGroups(g);
+        setMyGroups(g.map((gr) => gr.id));
+      }
+    );
+
+    return () => {
+      unsubPosts(); unsubFollowing(); unsubFollowers();
+      unsubBlocks(); unsubRequests(); unsubGroups();
+    };
+  }, [uid]);
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
-    const updated = { ...myProfile, ...updates };
-    setMyProfile(updated);
-    await AsyncStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updated));
+    if (!uid) return;
+    await updateDoc(doc(db, "users", uid), updates);
   };
 
-  const addPost = async (post: Omit<Post, "id" | "createdAt" | "likedBy" | "userId" | "userDisplayName" | "userHandle">) => {
+  const addPost = async (post: Omit<Post, "id" | "createdAt" | "likesCount" | "likedBy" | "userId" | "userDisplayName" | "userHandle">) => {
+    if (!myProfile) return;
+    const id = generateId();
     const newPost: Post = {
       ...post,
-      id: generateId(),
-      userId: MY_USER_ID,
+      id,
+      userId: uid,
       userDisplayName: myProfile.displayName,
       userHandle: myProfile.handle,
       userAvatarUri: myProfile.avatarUri,
+      likesCount: 0,
       likedBy: [],
       createdAt: new Date().toISOString(),
+      visibility: post.visibility ?? "public",
     };
-    const updated = [newPost, ...posts];
-    setPosts(updated);
-    const myPosts = updated.filter((p) => p.userId === MY_USER_ID);
-    await AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(myPosts));
-    await updateProfile({ postsCount: myProfile.postsCount + 1 });
+    await setDoc(doc(db, "posts", id), newPost);
+    await updateDoc(doc(db, "users", uid), { postsCount: increment(1) });
   };
 
   const deletePost = async (id: string) => {
-    const updated = posts.filter((p) => p.id !== id);
-    setPosts(updated);
-    const myPosts = updated.filter((p) => p.userId === MY_USER_ID);
-    await AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(myPosts));
+    await deleteDoc(doc(db, "posts", id));
+    await updateDoc(doc(db, "users", uid), { postsCount: increment(-1) });
   };
 
   const toggleLike = async (postId: string) => {
-    const updated = posts.map((p) => {
-      if (p.id !== postId) return p;
-      const liked = p.likedBy.includes(MY_USER_ID);
-      return {
-        ...p,
-        likedBy: liked ? p.likedBy.filter((id) => id !== MY_USER_ID) : [...p.likedBy, MY_USER_ID],
-      };
+    const postRef = doc(db, "posts", postId);
+    const post = posts.find((p) => p.id === postId);
+    if (!post) return;
+    const liked = post.likedBy.includes(uid);
+    const newLikedBy = liked ? post.likedBy.filter((id) => id !== uid) : [...post.likedBy, uid];
+    await updateDoc(postRef, {
+      likedBy: newLikedBy,
+      likesCount: liked ? increment(-1) : increment(1),
     });
-    setPosts(updated);
-    const myPosts = updated.filter((p) => p.userId === MY_USER_ID);
-    await AsyncStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(myPosts));
+    // Optimistic local update
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? { ...p, likedBy: newLikedBy, likesCount: liked ? p.likesCount - 1 : p.likesCount + 1 }
+          : p
+      )
+    );
   };
 
-  const createGroup = async (group: Omit<Group, "id" | "createdAt" | "members" | "memberCount" | "inviteCode">): Promise<Group> => {
+  const createGroup = async (
+    group: Omit<Group, "id" | "createdAt" | "members" | "memberCount" | "inviteCode" | "groupStreak">
+  ): Promise<Group> => {
+    if (!myProfile) throw new Error("Not logged in");
+    const id = generateId();
     const newGroup: Group = {
       ...group,
-      id: generateId(),
+      id,
       inviteCode: generateCode(),
-      members: [{ userId: MY_USER_ID, displayName: myProfile.displayName, streak: 0, joinedAt: new Date().toISOString() }],
+      members: [{ userId: uid, displayName: myProfile.displayName, streak: 0, joinedAt: new Date().toISOString() }],
       memberCount: 1,
+      groupStreak: 0,
       createdAt: new Date().toISOString(),
     };
-    const updatedGroups = [...groups, newGroup];
-    const updatedMyGroups = [...myGroups, newGroup.id];
-    setGroups(updatedGroups);
-    setMyGroups(updatedMyGroups);
-    await AsyncStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(updatedGroups));
-    await AsyncStorage.setItem(STORAGE_KEYS.MY_GROUPS, JSON.stringify(updatedMyGroups));
+    await setDoc(doc(db, "groups", id), { ...newGroup, memberIds: [uid] });
     return newGroup;
   };
 
   const joinGroup = async (inviteCode: string) => {
-    const group = groups.find((g) => g.inviteCode === inviteCode.toUpperCase());
-    if (!group) throw new Error("Invalid invite code");
-    if (myGroups.includes(group.id)) throw new Error("Already a member");
+    if (!myProfile) return;
+    const snap = await getDocs(
+      query(collection(db, "groups"), where("inviteCode", "==", inviteCode.toUpperCase()))
+    );
+    if (snap.empty) throw new Error("Invalid invite code");
+    const groupDoc = snap.docs[0];
+    const group = groupDoc.data() as Group & { memberIds: string[] };
+    if (group.memberIds?.includes(uid)) throw new Error("Already a member");
 
-    const updatedGroups = groups.map((g) => {
-      if (g.id !== group.id) return g;
-      return {
-        ...g,
-        memberCount: g.memberCount + 1,
-        members: [...g.members, { userId: MY_USER_ID, displayName: myProfile.displayName, streak: 0, joinedAt: new Date().toISOString() }],
-      };
+    const updatedMembers = [
+      ...group.members,
+      { userId: uid, displayName: myProfile.displayName, streak: 0, joinedAt: new Date().toISOString() },
+    ];
+    await updateDoc(groupDoc.ref, {
+      members: updatedMembers,
+      memberIds: [...(group.memberIds ?? []), uid],
+      memberCount: increment(1),
     });
-    const updatedMyGroups = [...myGroups, group.id];
-    setGroups(updatedGroups);
-    setMyGroups(updatedMyGroups);
-    await AsyncStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(updatedGroups));
-    await AsyncStorage.setItem(STORAGE_KEYS.MY_GROUPS, JSON.stringify(updatedMyGroups));
   };
 
   const leaveGroup = async (groupId: string) => {
-    const updatedGroups = groups.map((g) => {
-      if (g.id !== groupId) return g;
-      return {
-        ...g,
-        memberCount: Math.max(0, g.memberCount - 1),
-        members: g.members.filter((m) => m.userId !== MY_USER_ID),
-      };
+    const groupRef = doc(db, "groups", groupId);
+    const snap = await getDoc(groupRef);
+    if (!snap.exists()) return;
+    const group = snap.data() as Group & { memberIds: string[] };
+    await updateDoc(groupRef, {
+      members: group.members.filter((m) => m.userId !== uid),
+      memberIds: (group.memberIds ?? []).filter((id) => id !== uid),
+      memberCount: increment(-1),
     });
-    const updatedMyGroups = myGroups.filter((id) => id !== groupId);
-    setGroups(updatedGroups);
-    setMyGroups(updatedMyGroups);
-    await AsyncStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(updatedGroups));
-    await AsyncStorage.setItem(STORAGE_KEYS.MY_GROUPS, JSON.stringify(updatedMyGroups));
+  };
+
+  const followUser = async (targetId: string, isPrivate: boolean) => {
+    if (isPrivate) {
+      // Send follow request instead
+      const id = generateId();
+      const request: FollowRequest = {
+        id,
+        requesterId: uid,
+        requesterName: myProfile?.displayName ?? "",
+        requesterHandle: myProfile?.handle ?? "",
+        targetId,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      };
+      await setDoc(doc(db, "followRequests", id), request);
+    } else {
+      const id = `${uid}_${targetId}`;
+      await setDoc(doc(db, "follows", id), { followerId: uid, followingId: targetId, createdAt: new Date().toISOString() });
+      await updateDoc(doc(db, "users", uid), { followingCount: increment(1) });
+      await updateDoc(doc(db, "users", targetId), { followersCount: increment(1) });
+    }
+  };
+
+  const unfollowUser = async (targetId: string) => {
+    const id = `${uid}_${targetId}`;
+    await deleteDoc(doc(db, "follows", id));
+    await updateDoc(doc(db, "users", uid), { followingCount: increment(-1) });
+    await updateDoc(doc(db, "users", targetId), { followersCount: increment(-1) });
+  };
+
+  const blockUser = async (targetId: string) => {
+    const id = `${uid}_${targetId}`;
+    await setDoc(doc(db, "blocks", id), { blockerId: uid, blockedId: targetId, createdAt: new Date().toISOString() });
+    // Also unfollow if following
+    if (following.includes(targetId)) await unfollowUser(targetId);
+  };
+
+  const unblockUser = async (targetId: string) => {
+    await deleteDoc(doc(db, "blocks", `${uid}_${targetId}`));
+  };
+
+  const reportPost = async (postId: string, reason: string) => {
+    const id = generateId();
+    await setDoc(doc(db, "reports", id), {
+      id,
+      reporterId: uid,
+      contentType: "post",
+      contentId: postId,
+      reason,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    });
+  };
+
+  const reportUser = async (userId: string, reason: string) => {
+    const id = generateId();
+    await setDoc(doc(db, "reports", id), {
+      id,
+      reporterId: uid,
+      contentType: "user",
+      contentId: userId,
+      reason,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    });
+  };
+
+  const approveFollowRequest = async (requestId: string) => {
+    const req = pendingFollowRequests.find((r) => r.id === requestId);
+    if (!req) return;
+    await updateDoc(doc(db, "followRequests", requestId), { status: "approved" });
+    // Create the follow relationship
+    const id = `${req.requesterId}_${uid}`;
+    await setDoc(doc(db, "follows", id), {
+      followerId: req.requesterId,
+      followingId: uid,
+      createdAt: new Date().toISOString(),
+    });
+    await updateDoc(doc(db, "users", req.requesterId), { followingCount: increment(1) });
+    await updateDoc(doc(db, "users", uid), { followersCount: increment(1) });
+  };
+
+  const denyFollowRequest = async (requestId: string) => {
+    await updateDoc(doc(db, "followRequests", requestId), { status: "denied" });
+  };
+
+  const getAllUsers = async (): Promise<UserProfile[]> => {
+    const snap = await getDocs(collection(db, "users"));
+    return snap.docs
+      .map((d) => {
+        const u = d.data();
+        return {
+          id: u.uid,
+          displayName: u.displayName,
+          handle: u.handle,
+          bio: u.bio ?? "",
+          avatarUri: u.avatarUri,
+          isPrivate: u.isPrivate ?? false,
+          fitnessGoal: u.fitnessGoal ?? "",
+          followersCount: u.followersCount ?? 0,
+          followingCount: u.followingCount ?? 0,
+          postsCount: u.postsCount ?? 0,
+        } as UserProfile;
+      })
+      .filter((u) => u.id !== uid && !blockedUsers.includes(u.id));
   };
 
   return (
@@ -272,6 +411,9 @@ export function SocialProvider({ children }: { children: React.ReactNode }) {
         groups,
         myGroups,
         following,
+        followers,
+        blockedUsers,
+        pendingFollowRequests,
         isLoaded,
         updateProfile,
         addPost,
@@ -280,6 +422,15 @@ export function SocialProvider({ children }: { children: React.ReactNode }) {
         createGroup,
         joinGroup,
         leaveGroup,
+        followUser,
+        unfollowUser,
+        blockUser,
+        unblockUser,
+        reportPost,
+        reportUser,
+        approveFollowRequest,
+        denyFollowRequest,
+        getAllUsers,
       }}
     >
       {children}
