@@ -15,6 +15,7 @@ import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SESSION_COLORS, EXERCISE_LIBRARY } from "@/components/ExerciseData";
 import type { Exercise, WorkoutLog } from "@/context/WorkoutContext";
+import RestTimerModal, { type GameType, type RestNotification } from "@/components/RestTimerModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -94,6 +95,34 @@ function defaultExtra(): ExerciseExtra {
 }
 
 const PHOTO_KEY = (name: string) => `exercise_photo_${name.toLowerCase().replace(/\s+/g, "_")}`;
+
+// ─── Rep range feedback ───────────────────────────────────────────────────────
+
+function parseRepRange(s: string): { min: number; max: number } | null {
+  const m = s.match(/^(\d+)-(\d+)$/);
+  if (m) return { min: parseInt(m[1]), max: parseInt(m[2]) };
+  const n = parseInt(s);
+  if (!isNaN(n)) return { min: n, max: n };
+  return null;
+}
+
+type RepResult = "low" | "good" | "top" | "above";
+
+function getRepResult(actualReps: number, rangeStr: string): RepResult | null {
+  const range = parseRepRange(rangeStr);
+  if (!range) return null;
+  if (actualReps < range.min) return "low";
+  if (actualReps > range.max) return "above";
+  if (actualReps === range.max) return "top";
+  return "good";
+}
+
+const REP_FEEDBACK: Record<RepResult, RestNotification> = {
+  low:   { emoji: "⚖️", title: "Below Range",       message: "Try more reps or lighten the weight.",  color: "#F59E0B" },
+  good:  { emoji: "💪", title: "In Range!",          message: "Solid set — keep it consistent.",       color: "#10B981" },
+  top:   { emoji: "🔥", title: "Top of Range!",      message: "Push for more reps next time.",         color: "#F97316" },
+  above: { emoji: "🚀", title: "Above Range!",       message: "Time to increase the weight.",          color: "#8B5CF6" },
+};
 
 // ─── ExerciseTimerWidget ──────────────────────────────────────────────────────
 
@@ -246,31 +275,6 @@ function ExerciseTimerWidget({ onRemove }: { onRemove: () => void }) {
   );
 }
 
-// ─── PRBanner ─────────────────────────────────────────────────────────────────
-
-function PRBanner({ message, onDismiss }: { message: string; onDismiss: () => void }) {
-  const colors = useColors();
-  const translateY = useRef(new Animated.Value(-80)).current;
-
-  useEffect(() => {
-    Animated.spring(translateY, { toValue: 0, useNativeDriver: true, tension: 60, friction: 10 }).start();
-    const t = setTimeout(() => {
-      Animated.timing(translateY, { toValue: -80, useNativeDriver: true, duration: 300 }).start(onDismiss);
-    }, 4000);
-    return () => clearTimeout(t);
-  }, []);
-
-  return (
-    <Animated.View style={[styles.prBanner, { backgroundColor: colors.primary, transform: [{ translateY }] }]}>
-      <Ionicons name="trophy" size={16} color={colors.primaryForeground} />
-      <Text style={[styles.prBannerText, { color: colors.primaryForeground }]}>{message}</Text>
-      <TouchableOpacity onPress={onDismiss}>
-        <Ionicons name="close" size={14} color={colors.primaryForeground + "cc"} />
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
-
 // ─── StreakCelebration ────────────────────────────────────────────────────────
 
 function StreakCelebration({ streak, onDone }: { streak: number; onDone: () => void }) {
@@ -304,71 +308,6 @@ function StreakCelebration({ streak, onDone }: { streak: number; onDone: () => v
           </TouchableOpacity>
         </Animated.View>
       </Animated.View>
-    </Modal>
-  );
-}
-
-// ─── RestTimerModal ───────────────────────────────────────────────────────────
-
-function RestTimerModal({ visible, seconds, onClose }: { visible: boolean; seconds: number; onClose: () => void }) {
-  const colors = useColors();
-  const [remaining, setRemaining] = useState(seconds);
-  const totalRef = useRef(seconds);
-
-  useEffect(() => {
-    if (!visible) { setRemaining(seconds); totalRef.current = seconds; return; }
-    totalRef.current = seconds;
-    setRemaining(seconds);
-    const interval = setInterval(() => {
-      setRemaining((r) => {
-        if (r <= 1) {
-          clearInterval(interval);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          onClose();
-          return 0;
-        }
-        return r - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [visible, seconds]);
-
-  const adjustTime = (delta: number) => {
-    setRemaining((r) => {
-      const next = Math.max(1, r + delta);
-      if (next > totalRef.current) totalRef.current = next;
-      return next;
-    });
-  };
-
-  const progress = totalRef.current > 0 ? remaining / totalRef.current : 0;
-  const mins = Math.floor(remaining / 60);
-  const secs = remaining % 60;
-
-  return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.restOverlay}>
-        <View style={[styles.restModal, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.restTitle, { color: colors.mutedForeground }]}>REST</Text>
-          <Text style={[styles.restTime, { color: colors.foreground }]}>
-            {mins}:{secs.toString().padStart(2, "0")}
-          </Text>
-          <View style={[styles.restProgressBg, { backgroundColor: colors.muted }]}>
-            <View style={[styles.restProgressFill, { backgroundColor: colors.primary, width: `${Math.min(progress * 100, 100)}%` as any }]} />
-          </View>
-          <View style={styles.restAdjRow}>
-            <TouchableOpacity style={[styles.restAdjBtn, { backgroundColor: colors.muted }]} onPress={() => adjustTime(-10)}>
-              <Text style={[styles.restAdjText, { color: colors.foreground }]}>-10s</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.restSkipBtn, { backgroundColor: colors.muted }]} onPress={onClose}>
-              <Text style={[styles.restSkipText, { color: colors.foreground }]}>Skip Rest</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.restAdjBtn, { backgroundColor: colors.muted }]} onPress={() => adjustTime(10)}>
-              <Text style={[styles.restAdjText, { color: colors.foreground }]}>+10s</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
     </Modal>
   );
 }
@@ -1106,13 +1045,14 @@ export default function ActiveWorkoutScreen() {
   const [allSets, setAllSets] = useState<Record<string, LocalSet[]>>({});
   const [extras, setExtras] = useState<Record<string, ExerciseExtra>>({});
   const [restTimer, setRestTimer] = useState<{ seconds: number } | null>(null);
+  const [restNotification, setRestNotification] = useState<RestNotification | null>(null);
+  const [currentGame, setCurrentGame] = useState<GameType | null>(null);
   const [pendingComplete, setPendingComplete] = useState<{ exId: string; setIdx: number } | null>(null);
   const [swapTarget, setSwapTarget] = useState<string | null>(null);
   const [showEditExercises, setShowEditExercises] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [notes, setNotes] = useState("");
   const [shareOnFeed, setShareOnFeed] = useState(true);
-  const [prMessage, setPRMessage] = useState<string | null>(null);
   const [showStreak, setShowStreak] = useState(false);
   const [dragMode, setDragMode] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -1122,7 +1062,6 @@ export default function ActiveWorkoutScreen() {
 
   const pendingSetTypeRef = useRef<"normal" | "dropset">("normal");
   const pendingRestSecondsRef = useRef(90);
-  const prTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // All-time bests for PR detection
   const allTimeBests = useMemo(() => {
@@ -1249,28 +1188,43 @@ export default function ActiveWorkoutScreen() {
     setPendingComplete(null);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    // PR detection
+    // Build notification: rep-range feedback first, PR overrides it
+    let notif: RestNotification | null = null;
+
+    if (ex && set && ex.type !== "cardio" && set.reps && ex.reps) {
+      const actualReps = parseInt(set.reps) || 0;
+      const result = getRepResult(actualReps, ex.reps);
+      if (result) notif = { ...REP_FEEDBACK[result] };
+    }
+
     if (ex && set && ex.type !== "cardio" && set.weight && set.reps) {
       const key = ex.name.toLowerCase();
       const best = allTimeBests[key];
       const w = parseFloat(set.weight) || 0;
       const r = parseInt(set.reps) || 0;
-      let newPR: string | null = null;
 
       if (!best && w > 0) {
-        newPR = `First time logging ${ex.name}! 🎉`;
+        notif = {
+          emoji: "🎉", title: `First ${ex.name}!`,
+          message: "Your baseline is set. Keep going!",
+          color: colors.primary,
+        };
       } else if (best && w > best.maxWeight) {
-        newPR = `New PR! ${ex.name}: ${w}${weightUnit} × ${r} reps 🏆`;
+        notif = {
+          emoji: "🏆", title: "New PR!",
+          message: `${ex.name}: ${w}${weightUnit} × ${r} reps`,
+          color: "#F59E0B",
+        };
       } else if (best && w === best.maxWeight && r > best.maxRepsAtMaxWeight) {
-        newPR = `New PR! ${ex.name}: ${r} reps at ${w}${weightUnit} 🏆`;
-      }
-
-      if (newPR) {
-        if (prTimerRef.current) clearTimeout(prTimerRef.current);
-        setPRMessage(newPR);
-        prTimerRef.current = setTimeout(() => setPRMessage(null), 4000);
+        notif = {
+          emoji: "🏆", title: "New PR!",
+          message: `${ex.name}: ${r} reps at ${w}${weightUnit}`,
+          color: "#F59E0B",
+        };
       }
     }
+
+    setRestNotification(notif);
 
     if (pendingSetTypeRef.current !== "dropset" && pendingRestSecondsRef.current > 0) {
       setRestTimer({ seconds: pendingRestSecondsRef.current });
@@ -1364,9 +1318,6 @@ export default function ActiveWorkoutScreen() {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* PR banner */}
-      {prMessage && <PRBanner message={prMessage} onDismiss={() => setPRMessage(null)} />}
-
       {/* Header */}
       <View style={[styles.header, { paddingTop: topPad + 8, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={handleCancel}>
@@ -1455,7 +1406,14 @@ export default function ActiveWorkoutScreen() {
       />
 
       {/* Rest timer */}
-      <RestTimerModal visible={!!restTimer} seconds={restTimer?.seconds ?? 90} onClose={() => setRestTimer(null)} />
+      <RestTimerModal
+        visible={!!restTimer}
+        seconds={restTimer?.seconds ?? 90}
+        onClose={() => { setRestTimer(null); setRestNotification(null); }}
+        notification={restNotification}
+        currentGame={currentGame}
+        onGameChange={setCurrentGame}
+      />
 
       {/* Swap modal */}
       {swapTarget && (
@@ -1502,14 +1460,6 @@ export default function ActiveWorkoutScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-
-  // PR banner
-  prBanner: {
-    position: "absolute", top: 0, left: 0, right: 0, zIndex: 1000,
-    flexDirection: "row", alignItems: "center", gap: 8,
-    paddingHorizontal: 16, paddingVertical: 12,
-  },
-  prBannerText: { flex: 1, fontSize: 13, fontFamily: "Inter_600SemiBold" },
 
   // Streak celebration
   streakOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.75)", alignItems: "center", justifyContent: "center" },
@@ -1619,19 +1569,6 @@ const styles = StyleSheet.create({
   notesToggle: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderTopWidth: StyleSheet.hairlineWidth },
   notesToggleText: { flex: 1, fontSize: 12, fontFamily: "Inter_400Regular" },
   notesField: { borderRadius: 10, borderWidth: 1, padding: 10, fontSize: 13, fontFamily: "Inter_400Regular", minHeight: 64, textAlignVertical: "top" },
-
-  // Rest timer
-  restOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.75)", alignItems: "center", justifyContent: "center" },
-  restModal: { borderRadius: 24, borderWidth: 1, padding: 32, alignItems: "center", gap: 16, width: 280 },
-  restTitle: { fontSize: 12, fontFamily: "Inter_600SemiBold", textTransform: "uppercase", letterSpacing: 1.5 },
-  restTime: { fontSize: 56, fontWeight: "700", fontFamily: "Inter_700Bold" },
-  restProgressBg: { alignSelf: "stretch", height: 5, borderRadius: 3, overflow: "hidden" },
-  restProgressFill: { height: 5, borderRadius: 3 },
-  restAdjRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  restAdjBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 100 },
-  restAdjText: { fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
-  restSkipBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 100 },
-  restSkipText: { fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
 
   // RIR picker
   rirOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
