@@ -1560,10 +1560,7 @@ export default function ActiveWorkoutScreen() {
     for (const [exId, sets] of Object.entries(allSets)) {
       const ex = localExercises.find((e) => e.id === exId);
       sets.forEach((set) => {
-        // Save if ticked complete OR if the user entered weight/reps data but
-        // forgot to tick — we don't want entered data silently dropped on finish.
-        const hasData = (parseFloat(set.weight) > 0) || (parseInt(set.reps) > 0);
-        if (set.completed || hasData) {
+        if (set.completed) {
           builtSetLogs.push({
             id: `${Date.now().toString()}_${exId}_${set.setNumber}_${Math.random().toString(36).substr(2, 4)}`,
             exerciseId: exId,
@@ -1572,7 +1569,7 @@ export default function ActiveWorkoutScreen() {
             reps: parseInt(set.reps) || 0,
             weight: parseFloat(set.weight) || 0,
             unit: weightUnit,
-            completed: set.completed,
+            completed: true,
             type: set.type,
             timestamp: now,
             rir: set.rir !== "" && set.rir != null ? parseFloat(set.rir) : undefined,
