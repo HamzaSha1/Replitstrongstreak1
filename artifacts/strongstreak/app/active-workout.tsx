@@ -33,6 +33,7 @@ interface LocalSet {
 interface ExerciseExtra {
   photo: string | null;
   notes: string;
+  notePhotos: string[];
   notesExpanded: boolean;
   repMode: "reps" | "time";
   timerVisible: boolean;
@@ -93,7 +94,7 @@ function buildInitialSets(exercise: Exercise): LocalSet[] {
 }
 
 function defaultExtra(): ExerciseExtra {
-  return { photo: null, notes: "", notesExpanded: false, repMode: "reps", timerVisible: false };
+  return { photo: null, notes: "", notePhotos: [], notesExpanded: false, repMode: "reps", timerVisible: false };
 }
 
 const PHOTO_KEY = (name: string) => `exercise_photo_${name.toLowerCase().replace(/\s+/g, "_")}`;
@@ -765,6 +766,48 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
 const REP_CHIPS   = ["1","2","3","4","5","6","8","10","12","15","20","AMRAP"] as const;
 const TIME_CHIPS  = ["20s","30s","45s","60s","90s","2min","3min"] as const;
 
+// ─── PhotoLightbox ────────────────────────────────────────────────────────────
+
+function PhotoLightbox({
+  uri,
+  onClose,
+  onEditPress,
+}: {
+  uri: string;
+  onClose: () => void;
+  onEditPress?: () => void;
+}) {
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+      <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.93)", justifyContent: "center", alignItems: "center" }}>
+        {/* Close */}
+        <TouchableOpacity
+          style={{ position: "absolute", top: 56, right: 20, zIndex: 10, padding: 10, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.12)" }}
+          onPress={onClose}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="close" size={24} color="#fff" />
+        </TouchableOpacity>
+
+        {/* Image */}
+        <Image source={{ uri }} style={{ width: "100%", height: "65%", resizeMode: "contain" }} />
+
+        {/* Bottom actions */}
+        {onEditPress && (
+          <TouchableOpacity
+            onPress={onEditPress}
+            style={{ marginTop: 28, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, borderWidth: 1, borderColor: "rgba(255,255,255,0.3)" }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="pencil-outline" size={16} color="#fff" />
+            <Text style={{ color: "#fff", fontSize: 14, fontFamily: "Inter_500Medium" }}>Replace / Remove</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </Modal>
+  );
+}
+
 function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode, isDragging, onSetsChange, onCompleteRequest, onSwapPress, onExtraChange, onRepRangeChange, onStartDrag, onDragMove, onDragEnd, onSwipeActive, onSwipeIdle }: {
   exercise: Exercise;
   sets: LocalSet[];
@@ -789,6 +832,7 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
   const [repPickerOpen, setRepPickerOpen] = useState(false);
   const [rangeFirst, setRangeFirst] = useState<string | null>(null);
   const [pickerMode, setPickerMode] = useState<"reps" | "time">(extra.repMode);
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
   const completedCount = sets.filter((s) => s.completed).length;
   const isCardio = exercise.type === "cardio";
 
@@ -935,7 +979,13 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
       {/* Header */}
       <View style={styles.exHeader}>
         {/* Photo thumbnail / camera button */}
-        <TouchableOpacity onPress={handlePhotoPress} style={styles.photoBtn} activeOpacity={0.8}>
+        <TouchableOpacity
+          onPress={() => extra.photo ? setLightboxUri(extra.photo) : handlePhotoPress()}
+          onLongPress={() => extra.photo ? handlePhotoPress() : undefined}
+          delayLongPress={400}
+          style={styles.photoBtn}
+          activeOpacity={0.8}
+        >
           {extra.photo ? (
             <Image source={{ uri: extra.photo }} style={styles.photoThumb} />
           ) : (
@@ -1108,16 +1158,74 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
         <Ionicons name={extra.notesExpanded ? "chevron-up" : "chevron-down"} size={13} color={colors.mutedForeground} />
       </TouchableOpacity>
       {extra.notesExpanded && (
-        <View style={{ paddingHorizontal: 14, paddingBottom: 10 }}>
-          <TextInput
-            style={[styles.notesField, { backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
-            value={extra.notes}
-            onChangeText={(v) => onExtraChange({ notes: v })}
-            placeholder="Exercise notes, cues, reminders..."
-            placeholderTextColor={colors.mutedForeground}
-            multiline
-            numberOfLines={3}
-          />
+        <View style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 8 }}>
+          {/* Text field + camera button row */}
+          <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-start" }}>
+            <TextInput
+              style={[styles.notesField, { flex: 1, backgroundColor: colors.muted, color: colors.foreground, borderColor: colors.border }]}
+              value={extra.notes}
+              onChangeText={(v) => onExtraChange({ notes: v })}
+              placeholder="Exercise notes, cues, reminders..."
+              placeholderTextColor={colors.mutedForeground}
+              multiline
+              numberOfLines={3}
+            />
+            <TouchableOpacity
+              style={[styles.notePhotoBtn, { backgroundColor: colors.muted, borderColor: colors.border }]}
+              activeOpacity={0.7}
+              onPress={async () => {
+                const choice = await new Promise<"camera" | "library" | null>((resolve) => {
+                  Alert.alert("Add Photo", "Add a photo to notes", [
+                    { text: "Take Photo", onPress: () => resolve("camera") },
+                    { text: "Choose Library", onPress: () => resolve("library") },
+                    { text: "Cancel", style: "cancel", onPress: () => resolve(null) },
+                  ]);
+                });
+                if (!choice) return;
+                const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (choice === "camera") {
+                  const camStatus = await ImagePicker.requestCameraPermissionsAsync();
+                  if (camStatus.status !== "granted") { Alert.alert("Permission needed", "Camera access is required."); return; }
+                } else if (status !== "granted") {
+                  Alert.alert("Permission needed", "Photo library access is required."); return;
+                }
+                const result = choice === "camera"
+                  ? await ImagePicker.launchCameraAsync({ mediaTypes: "images", quality: 0.8, allowsEditing: false })
+                  : await ImagePicker.launchImageLibraryAsync({ mediaTypes: "images", quality: 0.8, allowsEditing: false });
+                if (!result.canceled && result.assets[0]) {
+                  const uri = result.assets[0].uri;
+                  onExtraChange({ notePhotos: [...(extra.notePhotos ?? []), uri] });
+                }
+              }}
+            >
+              <Ionicons name="camera-outline" size={18} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Note photo strip */}
+          {(extra.notePhotos ?? []).length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 2 }} contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
+              {(extra.notePhotos ?? []).map((uri, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => setLightboxUri(uri)}
+                  onLongPress={() => {
+                    Alert.alert("Remove Photo", "Remove this photo from notes?", [
+                      { text: "Remove", style: "destructive", onPress: () => {
+                        const updated = (extra.notePhotos ?? []).filter((_, i) => i !== idx);
+                        onExtraChange({ notePhotos: updated });
+                      }},
+                      { text: "Cancel", style: "cancel" },
+                    ]);
+                  }}
+                  delayLongPress={400}
+                  activeOpacity={0.85}
+                >
+                  <Image source={{ uri }} style={styles.notePhotoThumb} />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
         </View>
       )}
 
@@ -1185,6 +1293,18 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
         <Ionicons name="add" size={13} color={colors.primary} />
         <Text style={[styles.addSetText, { color: colors.primary }]}>Add set</Text>
       </TouchableOpacity>
+
+      {/* Photo lightbox (exercise photo + note photos) */}
+      {lightboxUri && (
+        <PhotoLightbox
+          uri={lightboxUri}
+          onClose={() => setLightboxUri(null)}
+          onEditPress={lightboxUri === extra.photo ? () => {
+            setLightboxUri(null);
+            handlePhotoPress();
+          } : undefined}
+        />
+      )}
 
     </View>
   );
@@ -1698,6 +1818,8 @@ const styles = StyleSheet.create({
   photoBtn: { width: 42, height: 42, borderRadius: 10, overflow: "hidden" },
   photoThumb: { width: 42, height: 42, borderRadius: 10 },
   photoPlaceholder: { width: 42, height: 42, borderRadius: 10, borderWidth: 1.5, borderStyle: "dashed", alignItems: "center", justifyContent: "center" },
+  notePhotoBtn: { width: 42, height: 42, borderRadius: 10, borderWidth: 1.5, borderStyle: "dashed", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+  notePhotoThumb: { width: 80, height: 80, borderRadius: 10 },
 
   // Rep range button (in header)
   repRangeBtn: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
