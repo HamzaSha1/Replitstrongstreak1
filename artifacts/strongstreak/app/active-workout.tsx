@@ -14,7 +14,7 @@ import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SESSION_COLORS, EXERCISE_LIBRARY } from "@/components/ExerciseData";
-import type { Exercise, WorkoutLog } from "@/context/WorkoutContext";
+import type { Exercise, WorkoutLog, SetLog } from "@/context/WorkoutContext";
 import RestTimerModal, { type GameType, type RestNotification } from "@/components/RestTimerModal";
 import ExerciseHistoryModal from "@/components/ExerciseHistoryModal";
 
@@ -1311,7 +1311,7 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
 export default function ActiveWorkoutScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { activeWorkout, workoutLogs, logSet, finishWorkout, cancelWorkout, weightUnit, streak } = useWorkout();
+  const { activeWorkout, workoutLogs, finishWorkout, cancelWorkout, weightUnit, streak } = useWorkout();
   const { addPost } = useSocial();
   const { elapsed, formatted } = useWorkoutTimer(!!activeWorkout?.isActive);
 
@@ -1551,11 +1551,18 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleSummaryFinish = async () => {
+    // Build the set logs array synchronously — calling logSet() then finishWorkout()
+    // immediately after is a race condition because React state updates are async,
+    // so activeWorkout.setLogs is still [] by the time finishWorkout reads it.
+    const builtSetLogs: SetLog[] = [];
+    const now = new Date().toISOString();
+
     for (const [exId, sets] of Object.entries(allSets)) {
       const ex = localExercises.find((e) => e.id === exId);
       sets.forEach((set) => {
         if (set.completed) {
-          logSet({
+          builtSetLogs.push({
+            id: `${Date.now().toString()}_${Math.random().toString(36).substr(2, 6)}`,
             exerciseId: exId,
             exerciseName: ex?.name ?? "",
             setNumber: set.setNumber,
@@ -1564,6 +1571,7 @@ export default function ActiveWorkoutScreen() {
             unit: weightUnit,
             completed: true,
             type: set.type,
+            timestamp: now,
             rir: set.rir !== "" && set.rir != null ? parseFloat(set.rir) : undefined,
             rpe: set.rpe !== "" && set.rpe != null ? parseFloat(set.rpe) : undefined,
           });
@@ -1571,7 +1579,7 @@ export default function ActiveWorkoutScreen() {
       });
     }
 
-    await finishWorkout(notes);
+    await finishWorkout(notes, builtSetLogs);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     if (shareOnFeed) {

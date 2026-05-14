@@ -109,7 +109,7 @@ interface WorkoutContextType {
   startWorkout: (split: Split, day: SplitDay) => void;
   logSet: (set: Omit<SetLog, "id" | "timestamp">) => void;
   updateSet: (setId: string, updates: Partial<SetLog>) => void;
-  finishWorkout: (notes: string) => Promise<WorkoutLog>;
+  finishWorkout: (notes: string, setLogs?: SetLog[]) => Promise<WorkoutLog>;
   cancelWorkout: () => void;
   addWeightEntry: (entry: Omit<WeightEntry, "id" | "userId">) => Promise<void>;
   deleteWeightEntry: (id: string) => Promise<void>;
@@ -256,12 +256,17 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const finishWorkout = async (notes: string): Promise<WorkoutLog> => {
+  const finishWorkout = async (notes: string, setLogs?: SetLog[]): Promise<WorkoutLog> => {
     if (!activeWorkout) throw new Error("No active workout");
     const finishedAt = new Date().toISOString();
     const durationMs = new Date(finishedAt).getTime() - new Date(activeWorkout.startedAt).getTime();
     const durationMinutes = Math.round(durationMs / 60000);
     const id = generateId();
+
+    // Use the explicitly passed setLogs if provided (avoids async state timing bug
+    // where activeWorkout.setLogs is still [] when finishWorkout is called right
+    // after logSet() calls).
+    const logsToSave = setLogs ?? activeWorkout.setLogs;
 
     const log: WorkoutLog = {
       id,
@@ -273,7 +278,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       startedAt: activeWorkout.startedAt,
       finishedAt,
       durationMinutes,
-      setLogs: activeWorkout.setLogs,
+      setLogs: logsToSave,
       notes,
     };
 
