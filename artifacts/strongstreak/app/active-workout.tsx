@@ -27,6 +27,7 @@ interface LocalSet {
   rpe: string;
   completed: boolean;
   type: "normal" | "dropset";
+  prefilled: boolean; // true = value came from prev session (shown in grey)
 }
 
 interface ExerciseExtra {
@@ -71,6 +72,7 @@ function getPrevSets(exerciseName: string, workoutLogs: WorkoutLog[]): LocalSet[
         rpe: s.rpe != null ? s.rpe.toString() : "",
         completed: false,
         type: (s.type ?? "normal") as "normal" | "dropset",
+        prefilled: false,
       }));
     }
   }
@@ -82,9 +84,9 @@ function buildInitialSets(exercise: Exercise): LocalSet[] {
   const result: LocalSet[] = [];
   let num = 1;
   for (let i = 0; i < exercise.sets; i++) {
-    result.push({ setNumber: num++, weight: "", reps: "", rir: "", rpe: "", completed: false, type: "normal" });
+    result.push({ setNumber: num++, weight: "", reps: "", rir: "", rpe: "", completed: false, type: "normal", prefilled: false });
     for (let d = 0; d < drop; d++) {
-      result.push({ setNumber: num++, weight: "", reps: "", rir: "", rpe: "", completed: false, type: "dropset" });
+      result.push({ setNumber: num++, weight: "", reps: "", rir: "", rpe: "", completed: false, type: "dropset", prefilled: false });
     }
   }
   return result;
@@ -332,7 +334,12 @@ function RIRPickerModal({ visible, onConfirm, onSkip }: { visible: boolean; onCo
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
           <Text style={[styles.rirTitle, { color: colors.foreground }]}>Reps In Reserve</Text>
           <Text style={[styles.rirSub, { color: colors.mutedForeground }]}>How many reps could you still do?</Text>
-          <View style={styles.rirOptions}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.rirOptions}
+            style={{ width: "100%" }}
+          >
             {RIR_OPTIONS.map((opt) => (
               <TouchableOpacity
                 key={opt.value}
@@ -344,7 +351,7 @@ function RIRPickerModal({ visible, onConfirm, onSkip }: { visible: boolean; onCo
                 <Text style={[styles.rirOptionSub, { color: colors.mutedForeground }]}>{opt.sub}</Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
           <TouchableOpacity style={styles.rirSkipRow} onPress={onSkip}>
             <Text style={[styles.rirSkipText, { color: colors.mutedForeground }]}>Skip</Text>
           </TouchableOpacity>
@@ -692,20 +699,22 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
           ) : (
             <>
               <TextInput
-                style={[styles.setInput, { flex: 1, backgroundColor: colors.muted, color: colors.foreground, borderColor: set.completed ? colors.primary + "30" : colors.border }]}
+                style={[styles.setInput, { flex: 1, backgroundColor: colors.muted, borderColor: set.completed ? colors.primary + "30" : colors.border,
+                  color: set.prefilled ? colors.mutedForeground : colors.foreground }]}
                 value={set.weight}
-                onChangeText={(v) => onUpdate({ weight: v })}
+                onChangeText={(v) => onUpdate({ weight: v, prefilled: false })}
                 keyboardType="decimal-pad"
-                placeholder={prevSet?.weight || "—"}
+                placeholder="—"
                 placeholderTextColor={colors.mutedForeground + "50"}
                 editable={!set.completed}
               />
               <Text style={[styles.setX, { color: colors.mutedForeground }]}>×</Text>
               {repMode === "time" ? (
                 <TextInput
-                  style={[styles.setInput, { flex: 1, backgroundColor: colors.muted, color: colors.foreground, borderColor: set.completed ? colors.primary + "30" : colors.border }]}
+                  style={[styles.setInput, { flex: 1, backgroundColor: colors.muted, borderColor: set.completed ? colors.primary + "30" : colors.border,
+                    color: set.prefilled ? colors.mutedForeground : colors.foreground }]}
                   value={set.reps}
-                  onChangeText={(v) => onUpdate({ reps: formatMmSs(v) })}
+                  onChangeText={(v) => onUpdate({ reps: formatMmSs(v), prefilled: false })}
                   keyboardType="numbers-and-punctuation"
                   placeholder="0:00"
                   placeholderTextColor={colors.mutedForeground + "50"}
@@ -713,11 +722,12 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
                 />
               ) : (
                 <TextInput
-                  style={[styles.setInput, { flex: 1, backgroundColor: colors.muted, color: colors.foreground, borderColor: set.completed ? colors.primary + "30" : colors.border }]}
+                  style={[styles.setInput, { flex: 1, backgroundColor: colors.muted, borderColor: set.completed ? colors.primary + "30" : colors.border,
+                    color: set.prefilled ? colors.mutedForeground : colors.foreground }]}
                   value={set.reps}
-                  onChangeText={(v) => onUpdate({ reps: v })}
+                  onChangeText={(v) => onUpdate({ reps: v, prefilled: false })}
                   keyboardType="decimal-pad"
-                  placeholder={prevSet?.reps || "—"}
+                  placeholder="—"
                   placeholderTextColor={colors.mutedForeground + "50"}
                   editable={!set.completed}
                 />
@@ -1017,26 +1027,58 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
           {/* Chips */}
           <View style={styles.repChips}>
             {(pickerMode === "reps" ? REP_CHIPS : TIME_CHIPS).map((val) => {
-              const isStart   = rangeFirst === val;
-              const isCurrent = !rangeFirst && exercise.reps === val;
+              const chipNum = val === "AMRAP" ? NaN : parseInt(val as string, 10);
+
+              // Parse confirmed range from exercise.reps e.g. "5-10"
+              const rangeMatch = !rangeFirst && exercise.reps?.match(/^(\d+)-(\d+)$/);
+              const confirmedRange = rangeMatch
+                ? { start: parseInt(rangeMatch[1]), end: parseInt(rangeMatch[2]) }
+                : null;
+
+              // Endpoint chips (full primary)
+              const isEndpoint =
+                rangeFirst === val ||
+                (confirmedRange && (confirmedRange.start === chipNum || confirmedRange.end === chipNum));
+
+              // In-between chips (lighter shade)
+              const isInRange =
+                !rangeFirst &&
+                confirmedRange &&
+                !isNaN(chipNum) &&
+                chipNum > confirmedRange.start &&
+                chipNum < confirmedRange.end;
+
+              // Single (non-range) selection
+              const isSingle = !rangeFirst && !confirmedRange && exercise.reps === val;
+
               return (
                 <TouchableOpacity
                   key={val}
                   style={[
                     styles.repChip,
-                    {
-                      borderColor: isStart || isCurrent ? colors.primary : colors.border,
-                      backgroundColor: isStart
-                        ? colors.primary + "50"
-                        : isCurrent
-                        ? colors.primary + "22"
-                        : colors.muted,
-                    },
+                    isEndpoint
+                      ? { borderColor: colors.primary, backgroundColor: colors.primary }
+                      : isInRange
+                      ? { borderColor: colors.primary + "55", backgroundColor: colors.primary + "28" }
+                      : isSingle
+                      ? { borderColor: colors.primary, backgroundColor: colors.primary + "22" }
+                      : { borderColor: colors.border, backgroundColor: colors.muted },
                   ]}
                   onPress={() => handleRepChip(val)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.repChipText, { color: isStart || isCurrent ? colors.primary : colors.foreground }]}>
+                  <Text
+                    style={[
+                      styles.repChipText,
+                      {
+                        color: isEndpoint
+                          ? colors.primaryForeground
+                          : isInRange || isSingle
+                          ? colors.primary
+                          : colors.foreground,
+                      },
+                    ]}
+                  >
                     {val}
                   </Text>
                 </TouchableOpacity>
@@ -1207,7 +1249,14 @@ export default function ActiveWorkoutScreen() {
     const initialSets: Record<string, LocalSet[]> = {};
     const initialExtras: Record<string, ExerciseExtra> = {};
     exs.forEach((ex) => {
-      initialSets[ex.id] = buildInitialSets(ex);
+      const prev = getPrevSets(ex.name, workoutLogs);
+      initialSets[ex.id] = buildInitialSets(ex).map((set, i) => {
+        const p = prev[i];
+        if (p && (p.weight || p.reps)) {
+          return { ...set, weight: p.weight, reps: p.reps, prefilled: true };
+        }
+        return set;
+      });
       initialExtras[ex.id] = defaultExtra();
     });
     setAllSets(initialSets);
@@ -1718,8 +1767,8 @@ const styles = StyleSheet.create({
   handle: { width: 36, height: 4, borderRadius: 2, marginBottom: 4 },
   rirTitle: { fontSize: 18, fontWeight: "700", fontFamily: "Inter_700Bold" },
   rirSub: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" },
-  rirOptions: { flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "center" },
-  rirOption: { width: 60, height: 64, borderRadius: 14, borderWidth: 1, alignItems: "center", justifyContent: "center", gap: 3 },
+  rirOptions: { flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingVertical: 4 },
+  rirOption: { width: 72, height: 76, borderRadius: 16, borderWidth: 1, alignItems: "center", justifyContent: "center", gap: 3 },
   rirOptionVal: { fontSize: 20, fontWeight: "700", fontFamily: "Inter_700Bold" },
   rirOptionSub: { fontSize: 10, fontFamily: "Inter_400Regular" },
   rirSkipRow: { paddingVertical: 10 },
