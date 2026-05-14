@@ -16,6 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SESSION_COLORS, EXERCISE_LIBRARY } from "@/components/ExerciseData";
 import type { Exercise, WorkoutLog } from "@/context/WorkoutContext";
 import RestTimerModal, { type GameType, type RestNotification } from "@/components/RestTimerModal";
+import ExerciseHistoryModal from "@/components/ExerciseHistoryModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,8 +60,11 @@ function useWorkoutTimer(running: boolean) {
 
 function getPrevSets(exerciseName: string, workoutLogs: WorkoutLog[]): LocalSet[] {
   const name = exerciseName.toLowerCase();
-  for (const log of workoutLogs) {
-    if (!log.finishedAt) continue;
+  // Sort newest-first so we always pick the most recent session
+  const sorted = [...workoutLogs]
+    .filter((l) => !!l.finishedAt)
+    .sort((a, b) => new Date(b.finishedAt!).getTime() - new Date(a.finishedAt!).getTime());
+  for (const log of sorted) {
     const sets = (log.setLogs ?? [])
       .filter((s) => s.exerciseName.toLowerCase() === name && s.completed)
       .sort((a, b) => a.setNumber - b.setNumber);
@@ -828,7 +832,8 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
   onSwipeIdle?: () => void;
 }) {
   const colors = useColors();
-  const [showHistory, setShowHistory] = useState(false);
+  const { workoutLogs, weightUnit: ctxWeightUnit } = useWorkout();
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [repPickerOpen, setRepPickerOpen] = useState(false);
   const [rangeFirst, setRangeFirst] = useState<string | null>(null);
   const [pickerMode, setPickerMode] = useState<"reps" | "time">(extra.repMode);
@@ -995,10 +1000,10 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
           )}
         </TouchableOpacity>
 
-        {/* Name + meta — long press to enter drag/reorder mode */}
+        {/* Name + meta — tap = history, long press = drag/reorder */}
         <TouchableOpacity
           style={{ flex: 1 }}
-          onPress={() => setShowHistory((v) => !v)}
+          onPress={() => setHistoryModalOpen(true)}
           onLongPress={handleLongPressName}
           delayLongPress={500}
           activeOpacity={0.7}
@@ -1229,23 +1234,14 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
         </View>
       )}
 
-      {/* History panel */}
-      {showHistory && (
-        <View style={[styles.historyPanel, { backgroundColor: colors.muted + "30", borderColor: colors.border }]}>
-          {prevSets.length === 0 ? (
-            <Text style={[styles.historyEmpty, { color: colors.mutedForeground }]}>No previous data</Text>
-          ) : (
-            <>
-              <Text style={[styles.historyHeading, { color: colors.mutedForeground }]}>LAST SESSION</Text>
-              {prevSets.filter((s) => s.type !== "dropset").map((s, i) => (
-                <Text key={i} style={[styles.historyEntry, { color: colors.mutedForeground }]}>
-                  Set {s.setNumber}: {s.weight ? `${s.weight}${weightUnit}` : "—"} × {s.reps || "—"} {extra.repMode === "time" ? "" : "reps"}{s.rir ? `  ·  RIR ${s.rir}` : ""}
-                </Text>
-              ))}
-            </>
-          )}
-        </View>
-      )}
+      {/* Full exercise history modal */}
+      <ExerciseHistoryModal
+        visible={historyModalOpen}
+        exerciseName={exercise.name}
+        workoutLogs={workoutLogs}
+        weightUnit={weightUnit}
+        onClose={() => setHistoryModalOpen(false)}
+      />
 
       {/* Per-exercise timer (shown in time mode) */}
       {extra.timerVisible && (
@@ -1568,8 +1564,8 @@ export default function ActiveWorkoutScreen() {
             unit: weightUnit,
             completed: true,
             type: set.type,
-            rir: set.rir ? parseInt(set.rir) : undefined,
-            rpe: set.rpe ? parseInt(set.rpe) : undefined,
+            rir: set.rir !== "" && set.rir != null ? parseFloat(set.rir) : undefined,
+            rpe: set.rpe !== "" && set.rpe != null ? parseFloat(set.rpe) : undefined,
           });
         }
       });
