@@ -52,6 +52,7 @@ export interface SetLog {
   id: string;
   exerciseId: string;
   exerciseName: string;
+  muscleGroup: string;        // e.g. "Quads", "Chest" — for volume tracking
   setNumber: number;
   reps: number;
   weight: number;
@@ -59,8 +60,8 @@ export interface SetLog {
   completed: boolean;
   timestamp: string;
   type: SetType;
-  rir?: number;   // Reps In Reserve (0-5)
-  rpe?: number;   // Rate of Perceived Exertion (1-10)
+  rir?: number;               // Reps In Reserve (0–4+)
+  rpe?: number;               // Rate of Perceived Exertion (1–10)
 }
 
 export interface WorkoutLog {
@@ -68,6 +69,7 @@ export interface WorkoutLog {
   userId: string;
   splitId: string;
   splitName: string;
+  splitDayId: string;         // which day in the split was performed
   dayLabel: string;
   sessionType: string;
   startedAt: string;
@@ -75,6 +77,7 @@ export interface WorkoutLog {
   durationMinutes?: number;
   setLogs: SetLog[];
   notes: string;
+  schemaVersion: number;      // bump when schema changes so stale writes are detectable
 }
 
 export interface WeightEntry {
@@ -90,6 +93,7 @@ export interface ActiveWorkoutState {
   isActive: boolean;
   splitId: string;
   splitName: string;
+  splitDayId: string;
   dayLabel: string;
   sessionType: string;
   exercises: Exercise[];
@@ -232,6 +236,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       isActive: true,
       splitId: split.id,
       splitName: split.name,
+      splitDayId: day.id,
       dayLabel: day.dayOfWeek,
       sessionType: day.sessionType,
       exercises: day.exercises,
@@ -273,6 +278,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       userId: uid,
       splitId: activeWorkout.splitId,
       splitName: activeWorkout.splitName,
+      splitDayId: activeWorkout.splitDayId ?? "",
       dayLabel: activeWorkout.dayLabel,
       sessionType: activeWorkout.sessionType,
       startedAt: activeWorkout.startedAt,
@@ -280,6 +286,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       durationMinutes,
       setLogs: logsToSave,
       notes,
+      schemaVersion: 2,
     };
 
     await setDoc(doc(db, "workoutLogs", id), log);

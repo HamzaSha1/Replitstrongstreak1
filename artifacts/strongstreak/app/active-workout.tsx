@@ -1565,6 +1565,7 @@ export default function ActiveWorkoutScreen() {
             id: `${Date.now().toString()}_${exId}_${set.setNumber}_${Math.random().toString(36).substr(2, 4)}`,
             exerciseId: exId,
             exerciseName: ex?.name ?? "",
+            muscleGroup: ex?.muscleGroup ?? "",
             setNumber: set.setNumber,
             reps: parseInt(set.reps) || 0,
             weight: parseFloat(set.weight) || 0,
@@ -1579,7 +1580,15 @@ export default function ActiveWorkoutScreen() {
       });
     }
 
-    await finishWorkout(notes, builtSetLogs);
+    try {
+      await finishWorkout(notes, builtSetLogs);
+    } catch (err: any) {
+      Alert.alert(
+        "Save Failed",
+        `Could not save workout: ${err?.message ?? String(err)}\n\nMake sure you're connected to the internet and try again.`
+      );
+      return;
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     if (shareOnFeed) {
