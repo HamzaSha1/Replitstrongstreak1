@@ -16,17 +16,29 @@ import { SESSION_COLORS } from "@/components/ExerciseData";
 function EditProfileModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { myProfile, updateProfile } = useSocial();
+  const { myProfile } = useSocial();
+  const { updateAppUser } = useAuth();
   const [displayName, setDisplayName] = useState(myProfile?.displayName ?? "");
   const [handle, setHandle] = useState(myProfile?.handle ?? "");
   const [bio, setBio] = useState(myProfile?.bio ?? "");
   const [isPrivate, setIsPrivate] = useState(myProfile?.isPrivate ?? false);
+  const [saving, setSaving] = useState(false);
 
   if (!myProfile) return null;
 
   const handleSave = async () => {
-    await updateProfile({ displayName, handle: handle.replace("@", "").toLowerCase(), bio, isPrivate });
-    onClose();
+    setSaving(true);
+    try {
+      await updateAppUser({
+        displayName: displayName.trim(),
+        handle: handle.replace("@", "").toLowerCase().trim(),
+        bio: bio.trim(),
+        isPrivate,
+      });
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -37,8 +49,10 @@ function EditProfileModal({ visible, onClose }: { visible: boolean; onClose: () 
             <Ionicons name="close" size={24} color={colors.mutedForeground} />
           </TouchableOpacity>
           <Text style={[styles.modalTitle, { color: colors.foreground }]}>Edit Profile</Text>
-          <TouchableOpacity onPress={handleSave}>
-            <Text style={[styles.saveText, { color: colors.primary }]}>Save</Text>
+          <TouchableOpacity onPress={handleSave} disabled={saving}>
+            <Text style={[styles.saveText, { color: saving ? colors.mutedForeground : colors.primary }]}>
+              {saving ? "Saving..." : "Save"}
+            </Text>
           </TouchableOpacity>
         </View>
 

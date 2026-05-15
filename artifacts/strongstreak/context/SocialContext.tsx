@@ -13,7 +13,8 @@ import {
   updateDoc,
   serverTimestamp,
 } from "@firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "@firebase/storage";
 import { useAuth } from "@/context/AuthContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -107,6 +108,7 @@ interface SocialContextType {
   approveFollowRequest: (requestId: string) => Promise<void>;
   denyFollowRequest: (requestId: string) => Promise<void>;
   getAllUsers: () => Promise<UserProfile[]>;
+  uploadPostImage: (localUri: string) => Promise<string>;
 }
 
 const SocialContext = createContext<SocialContextType | null>(null);
@@ -381,6 +383,15 @@ export function SocialProvider({ children }: { children: React.ReactNode }) {
     await updateDoc(doc(db, "followRequests", requestId), { status: "denied" });
   };
 
+  const uploadPostImage = async (localUri: string): Promise<string> => {
+    const response = await fetch(localUri);
+    const blob = await response.blob();
+    const filename = `posts/${uid}/${Date.now()}.jpg`;
+    const storageRef = ref(storage, filename);
+    await uploadBytes(storageRef, blob);
+    return await getDownloadURL(storageRef);
+  };
+
   const getAllUsers = async (): Promise<UserProfile[]> => {
     const snap = await getDocs(collection(db, "users"));
     return snap.docs
@@ -430,6 +441,7 @@ export function SocialProvider({ children }: { children: React.ReactNode }) {
         approveFollowRequest,
         denyFollowRequest,
         getAllUsers,
+        uploadPostImage,
       }}
     >
       {children}

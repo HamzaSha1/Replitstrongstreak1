@@ -7,7 +7,7 @@ import {
   updateProfile,
   User,
 } from "@firebase/auth";
-import { doc, setDoc, getDoc, getDocs, collection, query, where, serverTimestamp } from "@firebase/firestore";
+import { doc, setDoc, getDoc, getDocs, updateDoc, collection, query, where, serverTimestamp } from "@firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
 export interface AppUser {
@@ -58,7 +58,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const docRef = doc(db, "users", firebaseUser.uid);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
-          setAppUser(snap.data() as AppUser);
+          const userData = snap.data() as AppUser;
+          // Bootstrap owner account to admin on first login
+          if (firebaseUser.email === "hamza.shana1@gmail.com" && !userData.isAdmin) {
+            await updateDoc(docRef, { isAdmin: true });
+            userData.isAdmin = true;
+          }
+          setAppUser(userData);
         }
       } else {
         setAppUser(null);
