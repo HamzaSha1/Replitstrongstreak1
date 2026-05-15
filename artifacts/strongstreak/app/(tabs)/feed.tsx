@@ -2,17 +2,24 @@ import React, { useState } from "react";
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   Platform, TextInput, KeyboardAvoidingView, Modal,
-  Animated, RefreshControl,
+  RefreshControl, Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useSocial } from "@/context/SocialContext";
 import { useWorkout } from "@/context/WorkoutContext";
+import { useAuth } from "@/context/AuthContext";
 import * as Haptics from "expo-haptics";
 import { formatDistanceToNow } from "date-fns";
 
-const MY_USER_ID = "local_user";
+const REPORT_REASONS = [
+  "Spam",
+  "Inappropriate content",
+  "Harassment",
+  "False information",
+  "Other",
+];
 
 function Avatar({ name, size = 36 }: { name: string; size?: number }) {
   const colors = useColors();
@@ -29,11 +36,91 @@ function Avatar({ name, size = 36 }: { name: string; size?: number }) {
   );
 }
 
-function PostCard({ post }: { post: any }) {
+function ReportModal({
+  visible,
+  post,
+  onClose,
+}: {
+  visible: boolean;
+  post: { id: string; userId: string; userDisplayName: string } | null;
+  onClose: () => void;
+}) {
   const colors = useColors();
-  const { toggleLike, deletePost, myProfile } = useSocial();
-  const isLiked = post.likedBy.includes(MY_USER_ID);
-  const isOwn = post.userId === MY_USER_ID;
+  const insets = useSafeAreaInsets();
+  const { reportPost, blockUser } = useSocial();
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleReport = async (reason: string) => {
+    if (!post) return;
+    setSubmitting(true);
+    try {
+      await reportPost(post.id, reason);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      onClose();
+      Alert.alert(
+        "Reported",
+        `Post reported for "${reason}". Do you also want to block @${post.userDisplayName}?`,
+        [
+          { text: "No thanks", style: "cancel" },
+          {
+            text: "Block user",
+            style: "destructive",
+            onPress: async () => {
+              await blockUser(post.userId);
+            },
+          },
+        ]
+      );
+    } catch {
+      Alert.alert("Error", "Could not submit report. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose} transparent>
+      <View style={styles.reportOverlay}>
+        <View style={[styles.reportSheet, { backgroundColor: colors.card, paddingBottom: insets.bottom + 16 }]}>
+          <View style={[styles.reportHandle, { backgroundColor: colors.muted }]} />
+          <Text style={[styles.reportTitle, { color: colors.foreground }]}>Report Post</Text>
+          <Text style={[styles.reportSubtitle, { color: colors.mutedForeground }]}>
+            Why are you reporting this post?
+          </Text>
+          {REPORT_REASONS.map((reason) => (
+            <TouchableOpacity
+              key={reason}
+              style={[styles.reportReasonBtn, { borderColor: colors.border }]}
+              onPress={() => handleReport(reason)}
+              disabled={submitting}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.reportReasonText, { color: colors.foreground }]}>{reason}</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.mutedForeground} />
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={styles.reportCancelBtn} onPress={onClose}>
+            <Text style={[styles.reportCancelText, { color: colors.mutedForeground }]}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function PostCard({
+  post,
+  uid,
+  onReport,
+}: {
+  post: any;
+  uid: string;
+  onReport: (post: any) => void;
+}) {
+  const colors = useColors();
+  const { toggleLike, deletePost } = useSocial();
+  const isLiked = post.likedBy.includes(uid);
+  const isOwn = post.userId === uid;
 
   const handleLike = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -52,9 +139,24 @@ function PostCard({ post }: { post: any }) {
             <Text style={[styles.postMeta, { color: colors.mutedForeground }]}>@{post.userHandle} · {timeAgo}</Text>
           </View>
         </View>
-        {isOwn && (
-          <TouchableOpacity onPress={() => deletePost(post.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        {isOwn ? (
+          <TouchableOpacity
+            onPress={() => {
+              Alert.alert("Delete post", "Are you sure?", [
+                { text: "Cancel", style: "cancel" },
+                { text: "Delete", style: "destructive", onPress: () => deletePost(post.id) },
+              ]);
+            }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Ionicons name="trash-outline" size={16} color={colors.mutedForeground} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={() => onReport(post)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="flag-outline" size={16} color={colors.mutedForeground} />
           </TouchableOpacity>
         )}
       </View>
@@ -159,19 +261,25 @@ function ComposeModal({ visible, onClose }: { visible: boolean; onClose: () => v
 export default function FeedScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { posts } = useSocial();
+  const { user } = useAuth();
+  const uid = user?.uid ?? "";
+  const { posts, blockedUsers } = useSocial();
   const [composeVisible, setComposeVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [reportTarget, setReportTarget] = useState<any>(null);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    // Posts are live via onSnapshot — briefly show the refresh indicator
+    setTimeout(() => setRefreshing(false), 500);
   };
 
-  const sorted = [...posts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const sorted = [...posts]
+    .filter((p) => !blockedUsers.includes(p.userId))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -192,7 +300,9 @@ export default function FeedScreen() {
         contentContainerStyle={[styles.feedContent, { paddingBottom: bottomPad + 90 }]}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
-        renderItem={({ item }) => <PostCard post={item} />}
+        renderItem={({ item }) => (
+          <PostCard post={item} uid={uid} onReport={setReportTarget} />
+        )}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -204,6 +314,11 @@ export default function FeedScreen() {
       />
 
       <ComposeModal visible={composeVisible} onClose={() => setComposeVisible(false)} />
+      <ReportModal
+        visible={reportTarget !== null}
+        post={reportTarget}
+        onClose={() => setReportTarget(null)}
+      />
     </View>
   );
 }
@@ -254,4 +369,17 @@ const styles = StyleSheet.create({
     marginHorizontal: 16, padding: 12, borderRadius: 12, borderWidth: 1,
   },
   attachWorkoutText: { fontSize: 14, fontFamily: "Inter_500Medium" },
+  // Report modal
+  reportOverlay: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.5)" },
+  reportSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingTop: 12 },
+  reportHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: 16 },
+  reportTitle: { fontSize: 18, fontWeight: "700", fontFamily: "Inter_700Bold", textAlign: "center", marginBottom: 4 },
+  reportSubtitle: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", marginBottom: 16 },
+  reportReasonBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  reportReasonText: { fontSize: 15, fontFamily: "Inter_400Regular" },
+  reportCancelBtn: { paddingVertical: 16, alignItems: "center" },
+  reportCancelText: { fontSize: 15, fontFamily: "Inter_500Medium" },
 });

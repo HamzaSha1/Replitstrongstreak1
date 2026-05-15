@@ -7,7 +7,7 @@ import {
   updateProfile,
   User,
 } from "@firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "@firebase/firestore";
+import { doc, setDoc, getDoc, getDocs, collection, query, where, serverTimestamp } from "@firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
 export interface AppUser {
@@ -30,10 +30,11 @@ interface AuthContextType {
   user: User | null;
   appUser: AppUser | null;
   isLoading: boolean;
-  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signUp: (email: string, password: string, displayName: string, handle?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateAppUser: (updates: Partial<AppUser>) => Promise<void>;
+  checkHandleAvailable: (handle: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -67,14 +68,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const signUp = async (email: string, password: string, displayName: string) => {
+  const checkHandleAvailable = async (handle: string): Promise<boolean> => {
+    const snap = await getDocs(query(collection(db, "users"), where("handle", "==", handle.toLowerCase())));
+    return snap.empty;
+  };
+
+  const signUp = async (email: string, password: string, displayName: string, handle?: string) => {
+    const finalHandle = handle?.trim() ? handle.trim().toLowerCase() : generateHandle(displayName);
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName });
     const newUser: AppUser = {
       uid: cred.user.uid,
       email,
       displayName,
-      handle: generateHandle(displayName),
+      handle: finalHandle,
       bio: "",
       isPrivate: false,
       fitnessGoal: "",
@@ -105,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, appUser, isLoading, signUp, signIn, signOut, updateAppUser }}>
+    <AuthContext.Provider value={{ user, appUser, isLoading, signUp, signIn, signOut, updateAppUser, checkHandleAvailable }}>
       {children}
     </AuthContext.Provider>
   );
