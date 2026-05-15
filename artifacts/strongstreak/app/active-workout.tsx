@@ -1369,7 +1369,7 @@ export default function ActiveWorkoutScreen() {
       initialSets[ex.id] = buildInitialSets(ex).map((set, i) => {
         const p = prev[i];
         if (p && (p.weight || p.reps)) {
-          return { ...set, weight: p.weight, reps: p.reps, prefilled: true };
+          return { ...set, weight: p.weight, reps: p.reps, rir: p.rir, rpe: p.rpe, prefilled: true };
         }
         return set;
       });
