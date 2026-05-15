@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
   Platform, Modal, Alert, Animated, PanResponder, Image,
@@ -812,7 +812,7 @@ function PhotoLightbox({
   );
 }
 
-function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode, isDragging, onSetsChange, onCompleteRequest, onSwapPress, onExtraChange, onRepRangeChange, onStartDrag, onDragMove, onDragEnd, onSwipeActive, onSwipeIdle }: {
+function ExerciseCardImpl({ exercise, sets, prevSets, weightUnit, extra, isDragMode, isDragging, onSetsChange, onCompleteRequest, onSwapPress, onExtraChange, onRepRangeChange, onStartDrag, onDragMove, onDragEnd, onSwipeActive, onSwipeIdle }: {
   exercise: Exercise;
   sets: LocalSet[];
   prevSets: LocalSet[];
@@ -871,10 +871,24 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
   const onDragMoveRef = useRef(onDragMove);
   const onDragEndRef = useRef(onDragEnd);
   const onStartDragRef = useRef(onStartDrag);
+  const onSetsChangeRef = useRef(onSetsChange);
+  const onCompleteRequestRef = useRef(onCompleteRequest);
+  const onSwapPressRef = useRef(onSwapPress);
+  const onExtraChangeRef = useRef(onExtraChange);
+  const onRepRangeChangeRef = useRef(onRepRangeChange);
+  const onSwipeActiveRef = useRef(onSwipeActive);
+  const onSwipeIdleRef = useRef(onSwipeIdle);
   useEffect(() => { onDragMoveRef.current = onDragMove; }, [onDragMove]);
   useEffect(() => { onDragEndRef.current = onDragEnd; }, [onDragEnd]);
   useEffect(() => { onStartDragRef.current = onStartDrag; }, [onStartDrag]);
   useEffect(() => { isDraggingRef.current = isDragging; }, [isDragging]);
+  useEffect(() => { onSetsChangeRef.current = onSetsChange; }, [onSetsChange]);
+  useEffect(() => { onCompleteRequestRef.current = onCompleteRequest; }, [onCompleteRequest]);
+  useEffect(() => { onSwapPressRef.current = onSwapPress; }, [onSwapPress]);
+  useEffect(() => { onExtraChangeRef.current = onExtraChange; }, [onExtraChange]);
+  useEffect(() => { onRepRangeChangeRef.current = onRepRangeChange; }, [onRepRangeChange]);
+  useEffect(() => { onSwipeActiveRef.current = onSwipeActive; }, [onSwipeActive]);
+  useEffect(() => { onSwipeIdleRef.current = onSwipeIdle; }, [onSwipeIdle]);
 
   const dragPanResponder = useRef(
     PanResponder.create({
@@ -1306,6 +1320,18 @@ function ExerciseCard({ exercise, sets, prevSets, weightUnit, extra, isDragMode,
   );
 }
 
+const ExerciseCard = React.memo(ExerciseCardImpl, (prev, next) => {
+  return (
+    prev.exercise === next.exercise &&
+    prev.sets === next.sets &&
+    prev.prevSets === next.prevSets &&
+    prev.weightUnit === next.weightUnit &&
+    prev.extra === next.extra &&
+    prev.isDragMode === next.isDragMode &&
+    prev.isDragging === next.isDragging
+  );
+});
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function ActiveWorkoutScreen() {
@@ -1336,6 +1362,15 @@ export default function ActiveWorkoutScreen() {
 
   const pendingSetTypeRef = useRef<"normal" | "dropset">("normal");
   const pendingRestSecondsRef = useRef(90);
+
+  // Pre-compute previous sets per exercise — avoids O(n×m) work on every render tick
+  const prevSetsMap = useMemo(() => {
+    const map: Record<string, LocalSet[]> = {};
+    localExercises.forEach((ex) => {
+      map[ex.id] = getPrevSets(ex.name, workoutLogs);
+    });
+    return map;
+  }, [localExercises, workoutLogs]);
 
   // All-time bests for PR detection
   const allTimeBests = useMemo(() => {
@@ -1661,13 +1696,15 @@ export default function ActiveWorkoutScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         scrollEnabled={!dragMode && !isAnySwiping}
+        scrollEventThrottle={16}
+        decelerationRate="normal"
       >
         {localExercises.map((ex, idx) => (
           <ExerciseCard
             key={ex.id}
             exercise={ex}
             sets={allSets[ex.id] ?? []}
-            prevSets={getPrevSets(ex.name, workoutLogs)}
+            prevSets={prevSetsMap[ex.id] ?? []}
             weightUnit={weightUnit}
             extra={extras[ex.id] ?? defaultExtra()}
             isDragMode={dragMode}
