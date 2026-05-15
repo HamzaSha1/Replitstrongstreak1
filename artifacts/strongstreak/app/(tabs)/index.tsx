@@ -42,7 +42,7 @@ function DayCard({ day, onStart }: { day: SplitDay; onStart: () => void }) {
           <SessionTypePill type={day.sessionType || "Rest"} />
         </View>
         <Text style={[styles.dayExerciseCount, { color: colors.foreground }]}> 
-          {isRest ? "Recovery day" : `${day.exercises.length} exercises`}
+          {isRest ? "Recovery day" : day.sessionType || `${day.exercises.length} exercises`}
         </Text>
         {!isRest && day.exercises.length > 0 && (
           <Text style={[styles.dayExercisePreview, { color: colors.mutedForeground }]} numberOfLines={1}>

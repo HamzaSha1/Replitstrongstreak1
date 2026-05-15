@@ -117,11 +117,33 @@ function DaySection({ day, onUpdateDay, onAddExercise }: {
 }) {
   const colors = useColors();
   const [isOpen, setIsOpen] = useState(false);
+  const isCustomType = !SESSION_TYPES.includes(day.sessionType) && day.sessionType !== "";
+  const [showCustomInput, setShowCustomInput] = useState(isCustomType);
+  const [customName, setCustomName] = useState(isCustomType ? day.sessionType : "");
   const color = SESSION_COLORS[day.sessionType] ?? colors.primary;
 
   const removeExercise = (exId: string) => {
     onUpdateDay({ ...day, exercises: day.exercises.filter((e) => e.id !== exId) });
   };
+
+  const handleSessionTypePress = (type: string) => {
+    if (type === "Custom") {
+      setShowCustomInput(true);
+      setCustomName("");
+      onUpdateDay({ ...day, sessionType: "" });
+    } else {
+      setShowCustomInput(false);
+      setCustomName("");
+      onUpdateDay({ ...day, sessionType: type });
+    }
+  };
+
+  const handleCustomNameSubmit = () => {
+    const trimmed = customName.trim();
+    if (trimmed) onUpdateDay({ ...day, sessionType: trimmed });
+  };
+
+  const isCustomPillActive = showCustomInput || isCustomType;
 
   return (
     <View style={[styles.daySection, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -151,17 +173,35 @@ function DaySection({ day, onUpdateDay, onAddExercise }: {
         <View style={[styles.daySectionBody, { borderTopColor: colors.border }]}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sessionTypeScroll}>
             <View style={styles.sessionTypePills}>
-              {SESSION_TYPES.map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={[styles.sessionTypeOption, { backgroundColor: day.sessionType === type ? (SESSION_COLORS[type] ?? colors.primary) : colors.muted, borderColor: day.sessionType === type ? (SESSION_COLORS[type] ?? colors.primary) : colors.border }]}
-                  onPress={() => onUpdateDay({ ...day, sessionType: type })}
-                >
-                  <Text style={[styles.sessionTypeOptionText, { color: day.sessionType === type ? "#fff" : colors.mutedForeground }]}>{type}</Text>
-                </TouchableOpacity>
-              ))}
+              {SESSION_TYPES.map((type) => {
+                const isActive = type === "Custom" ? isCustomPillActive : day.sessionType === type;
+                const activeColor = SESSION_COLORS[type] ?? colors.primary;
+                return (
+                  <TouchableOpacity
+                    key={type}
+                    style={[styles.sessionTypeOption, { backgroundColor: isActive ? activeColor : colors.muted, borderColor: isActive ? activeColor : colors.border }]}
+                    onPress={() => handleSessionTypePress(type)}
+                  >
+                    <Text style={[styles.sessionTypeOptionText, { color: isActive ? "#fff" : colors.mutedForeground }]}>{type}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </ScrollView>
+
+          {showCustomInput && (
+            <TextInput
+              style={[styles.customNameInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
+              placeholder="Workout name (e.g. Arms, Chest & Back…)"
+              placeholderTextColor={colors.mutedForeground}
+              value={customName}
+              onChangeText={setCustomName}
+              onBlur={handleCustomNameSubmit}
+              onSubmitEditing={handleCustomNameSubmit}
+              returnKeyType="done"
+              autoFocus
+            />
+          )}
 
           {day.exercises.map((ex) => (
             <View key={ex.id} style={[styles.exerciseItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
@@ -312,6 +352,7 @@ const styles = StyleSheet.create({
   sessionTypePills: { flexDirection: "row", gap: 6 },
   sessionTypeOption: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, borderWidth: 1 },
   sessionTypeOptionText: { fontSize: 13, fontWeight: "500", fontFamily: "Inter_500Medium" },
+  customNameInput: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontFamily: "Inter_500Medium", marginBottom: 4 },
   exerciseItem: { flexDirection: "row", alignItems: "center", borderRadius: 10, borderWidth: 1, padding: 12 },
   exerciseItemInfo: { flex: 1 },
   exerciseItemName: { fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
