@@ -183,10 +183,35 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!uid) return;
 
+    // Fallback: one-time fetch in case the real-time listener fails
+    const fetchFallback = async () => {
+      try {
+        const [splitsSnap, logsSnap, weightSnap] = await Promise.all([
+          getDocs(query(collection(db, "splits"), where("userId", "==", uid))),
+          getDocs(query(collection(db, "workoutLogs"), where("userId", "==", uid))),
+          getDocs(query(collection(db, "weightEntries"), where("userId", "==", uid))),
+        ]);
+        setSplits(splitsSnap.docs.map((d) => d.data() as Split));
+        const logs = logsSnap.docs.map((d) => d.data() as WorkoutLog);
+        logs.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+        setWorkoutLogs(logs);
+        setIsLoaded(true);
+        const entries = weightSnap.docs.map((d) => d.data() as WeightEntry);
+        entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setWeightEntries(entries);
+      } catch (e) {
+        console.warn("Firestore fallback fetch failed:", e);
+      }
+    };
+
     const unsubSplits = onSnapshot(
       query(collection(db, "splits"), where("userId", "==", uid)),
       (snap) => {
         setSplits(snap.docs.map((d) => d.data() as Split));
+      },
+      (err) => {
+        console.warn("splits listener error:", err.code, err.message);
+        fetchFallback();
       }
     );
 
@@ -197,6 +222,10 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         logs.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
         setWorkoutLogs(logs);
         setIsLoaded(true);
+      },
+      (err) => {
+        console.warn("workoutLogs listener error:", err.code, err.message);
+        fetchFallback();
       }
     );
 
@@ -206,8 +235,15 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         const entries = snap.docs.map((d) => d.data() as WeightEntry);
         entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setWeightEntries(entries);
+      },
+      (err) => {
+        console.warn("weightEntries listener error:", err.code, err.message);
       }
     );
+
+    // Always do an immediate one-time fetch so data appears even if the
+    // real-time listener takes a moment to connect or is blocked.
+    fetchFallback();
 
     setIsLoaded(false);
     return () => { unsubSplits(); unsubLogs(); unsubWeight(); };
