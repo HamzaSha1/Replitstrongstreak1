@@ -2,7 +2,7 @@
   "expo": {
     "name": "StrongStreak",
     "slug": "strongstreak",
-    "version": "2.0.0",
+    "version": "3.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "strongstreak",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.base69c726762a424892bc419135.app",
-      "buildNumber": "1",
+      "buildNumber": "29",
       "infoPlist": {
         "NSCameraUsageDescription": "StrongStreak needs camera access to let you take photos for your workout posts.",
         "NSPhotoLibraryUsageDescription": "StrongStreak needs photo library access to let you pick photos for your workout posts.",
