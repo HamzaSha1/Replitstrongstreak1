@@ -1,0 +1,2862 @@
+{
+  "exported_at": "2026-05-15T17:01:21.382Z",
+  "user": "hamza.shana1@gmail.com",
+  "split_plan": [
+    {
+      "id": "69e78dd7150d3ff9721d86b8",
+      "day_of_week": "Saturday",
+      "split_name": "My Split",
+      "session_type": "Rest",
+      "custom_name": null,
+      "order_index": 5,
+      "exercises": []
+    },
+    {
+      "id": "69e78dd7150d3ff9721d86b4",
+      "day_of_week": "Tuesday",
+      "split_name": "My Split",
+      "session_type": "Upper",
+      "custom_name": null,
+      "order_index": 1,
+      "exercises": [
+        {
+          "name": "Chest Press (Machine)",
+          "exercise_type": "strength",
+          "target_sets": 2,
+          "target_reps": "8-10",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Lat Pulldown - Close Grip (Cable)",
+          "exercise_type": "strength",
+          "target_sets": 2,
+          "target_reps": "10-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Shrug (Machine)",
+          "exercise_type": "strength",
+          "target_sets": 2,
+          "target_reps": "10-12",
+          "rpe": null,
+          "rest_seconds": 60,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Iso-Lateral Row (Machine)",
+          "exercise_type": "strength",
+          "target_sets": 2,
+          "target_reps": "10-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Lateral Raise (Cable)",
+          "exercise_type": "strength",
+          "target_sets": 1,
+          "target_reps": "10-12",
+          "rpe": null,
+          "rest_seconds": 60,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Butterfly (Pec Deck)",
+          "exercise_type": "strength",
+          "target_sets": 1,
+          "target_reps": "10-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Decline Crunch",
+          "exercise_type": "strength",
+          "target_sets": 1,
+          "target_reps": "10-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "69e78dd7150d3ff9721d86b3",
+      "day_of_week": "Monday",
+      "split_name": "My Split",
+      "session_type": "Full Body",
+      "custom_name": null,
+      "order_index": 0,
+      "exercises": [
+        {
+          "name": "Seated Leg Curl (Machine)",
+          "exercise_type": "strength",
+          "target_sets": 2,
+          "target_reps": "10-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": "what a note\n"
+        },
+        {
+          "name": "Hack Squat (Machine)",
+          "exercise_type": "strength",
+          "target_sets": 2,
+          "target_reps": "10",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Incline bench press ( Machine)",
+          "exercise_type": "strength",
+          "target_sets": 2,
+          "target_reps": "10",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Chest Supported Y Raise (Dumbbell)",
+          "exercise_type": "strength",
+          "target_sets": 1,
+          "target_reps": "10",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Seated Calf Raise",
+          "exercise_type": "strength",
+          "target_sets": 2,
+          "target_reps": "10",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Pull Up (Weighted)",
+          "exercise_type": "strength",
+          "target_sets": 2,
+          "target_reps": "10",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "69e78dd7150d3ff9721d86b6",
+      "day_of_week": "Thursday",
+      "split_name": "My Split",
+      "session_type": "Push",
+      "custom_name": null,
+      "order_index": 3,
+      "exercises": [
+        {
+          "name": "Behind the Back Curl (Cable)",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "8-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Overhead Triceps Extension (Cable)",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "8-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Seated Triceps Press",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "8-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Preacher Curl (Machine)",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "8-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Triceps Kickback (Cable)",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "8-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Bicep Curl (Machine)",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "8-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Lateral Raise (Cable)",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "12-15",
+          "rpe": null,
+          "rest_seconds": 60,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Dead Hang",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "30-60",
+          "rpe": null,
+          "rest_seconds": 120,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "wrist Squeeze",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "15",
+          "rpe": null,
+          "rest_seconds": 60,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Seated Palms Up Wrist Curl",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "15",
+          "rpe": null,
+          "rest_seconds": 60,
+          "cardio_metric": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "69e78dd7150d3ff9721d86b9",
+      "day_of_week": "Sunday",
+      "split_name": "My Split",
+      "session_type": "Rest",
+      "custom_name": null,
+      "order_index": 6,
+      "exercises": []
+    },
+    {
+      "id": "69e78dd7150d3ff9721d86b5",
+      "day_of_week": "Wednesday",
+      "split_name": "My Split",
+      "session_type": "Lower",
+      "custom_name": null,
+      "order_index": 2,
+      "exercises": [
+        {
+          "name": "Leg Extension (Machine)",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "10-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Seated Leg Curl (Machine)",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "10-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Hip Thrust (Barbell)",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "10-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Back Extension (Hyperextension)",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "10-12",
+          "rpe": null,
+          "rest_seconds": 90,
+          "cardio_metric": null,
+          "notes": null
+        },
+        {
+          "name": "Decline Crunch",
+          "exercise_type": "strength",
+          "target_sets": 3,
+          "target_reps": "10-15",
+          "rpe": null,
+          "rest_seconds": 60,
+          "cardio_metric": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "id": "69e78dd7150d3ff9721d86b7",
+      "day_of_week": "Friday",
+      "split_name": "My Split",
+      "session_type": "Rest",
+      "custom_name": null,
+      "order_index": 4,
+      "exercises": []
+    }
+  ],
+  "workout_history": [
+    {
+      "id": "6a04903365a62461274d984a",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-05-13T14:52:34.685Z",
+      "finished_at": "2026-05-13T15:30:11.918Z",
+      "duration_minutes": 14,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Chest Supported Y Raise (Dumbbell)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 11,
+          "weight_kg": 9.07,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Incline bench press ( Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 7,
+          "weight_kg": 0,
+          "rpe": 1,
+          "completed": true
+        },
+        {
+          "exercise_name": "Hack Squat (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 6,
+          "weight_kg": 30,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Calf Raise",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 17,
+          "weight_kg": 50,
+          "rpe": 0.5,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 9,
+          "weight_kg": 28.35,
+          "rpe": 0.5,
+          "completed": true
+        },
+        {
+          "exercise_name": "Incline bench press ( Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 7,
+          "weight_kg": 0,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Hack Squat (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 7,
+          "weight_kg": 30,
+          "rpe": 0.5,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Calf Raise",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 12,
+          "weight_kg": 50,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Pull Up (Weighted)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 20,
+          "weight_kg": 0,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 7,
+          "weight_kg": 0,
+          "rpe": 0,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69ea6e16b0754b675988fd54",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-23T19:08:06.031Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ea6d0fc79f96a7441c89bb",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-23T19:03:42.801Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ea6b63d68b83427badc40f",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-23T18:56:34.982Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ea6b2b0906a169c67a40f5",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-23T18:55:39.505Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ea69a63a3ddfcbed71570a",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-23T18:49:09.422Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ea274c71748460207d486e",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-23T14:06:03.559Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ea2665332dce8f3092948d",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-23T14:02:11.988Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ea243b008e7d013cefc8d9",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-23T13:52:58.710Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ea2331455736e636987fe6",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-23T13:48:32.687Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ea22f1e825856816aea9f0",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-23T13:47:29.235Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ea21811bfc6fce68895599",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-23T13:41:19.983Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e91eb54bad3faf2ce5ea0d",
+      "split_day_name": "Tuesday — Upper",
+      "started_at": "2026-04-22T19:17:08.038Z",
+      "finished_at": "2026-04-22T19:20:26.675Z",
+      "duration_minutes": 3,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Decline Crunch",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Butterfly (Pec Deck)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 23,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Lateral Raise (Cable)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 23,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Iso-Lateral Row (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 60,
+          "rpe": 0.5,
+          "completed": true
+        },
+        {
+          "exercise_name": "Shrug (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 100,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Lat Pulldown - Close Grip (Cable)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 8,
+          "weight_kg": 93.5,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Chest Press (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 9,
+          "weight_kg": 60,
+          "rpe": 0.5,
+          "completed": true
+        },
+        {
+          "exercise_name": "Iso-Lateral Row (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 65,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Shrug (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 5,
+          "weight_kg": 100,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Lat Pulldown - Close Grip (Cable)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 8,
+          "weight_kg": 93.5,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Chest Press (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 8,
+          "weight_kg": 60,
+          "rpe": 0,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69e8e53b48dd4113115d7207",
+      "split_day_name": "Tuesday — Upper",
+      "started_at": "2026-04-22T15:11:45.409Z",
+      "finished_at": "2026-04-22T16:12:21.071Z",
+      "duration_minutes": 22,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Rear delt cable flies",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 23,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Lateral Raise (Cable)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 23,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Iso-Lateral Row (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 60,
+          "rpe": 0.5,
+          "completed": true
+        },
+        {
+          "exercise_name": "Shrug (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 100,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Lat Pulldown - Close Grip (Cable)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 8,
+          "weight_kg": 93.5,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Chest Press (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 9,
+          "weight_kg": 60,
+          "rpe": 0.5,
+          "completed": true
+        },
+        {
+          "exercise_name": "Iso-Lateral Row (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 65,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Shrug (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 5,
+          "weight_kg": 100,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Lat Pulldown - Close Grip (Cable)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 8,
+          "weight_kg": 93.5,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Chest Press (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 8,
+          "weight_kg": 60,
+          "rpe": 0,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69e890f156cd1215d2209ead",
+      "split_day_name": "Wednesday — Lower",
+      "started_at": "2026-04-22T09:12:17.026Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e88644f26b24cd43034057",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-22T08:26:44.335Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e8801cf26b24cd43033d88",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-22T08:00:28.273Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e7e857a99da7234ce8a25f",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T21:12:55.318Z",
+      "finished_at": "2026-04-21T21:17:04.391Z",
+      "duration_minutes": 4,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e7aebd5bb184b4d38ad6bf",
+      "split_day_name": "Tuesday — Upper",
+      "started_at": "2026-04-21T17:07:09.308Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e7ae917c24cb58ec513ce9",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T17:06:24.973Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e7943a0c2e935bc51d6eff",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T15:14:02.397Z",
+      "finished_at": "2026-04-21T16:06:28.251Z",
+      "duration_minutes": 23,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Pull Up (Weighted)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 19,
+          "weight_kg": 0,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Calf Raise",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 16,
+          "weight_kg": 50,
+          "rpe": 0.5,
+          "completed": true
+        },
+        {
+          "exercise_name": "Chest Supported Y Raise (Dumbbell)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 9.07,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Incline bench press ( Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 8,
+          "weight_kg": 70.5,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Hack Squat (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 6,
+          "weight_kg": 40,
+          "rpe": 1,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 8,
+          "weight_kg": 28.35,
+          "rpe": 0.5,
+          "completed": true
+        },
+        {
+          "exercise_name": "Pull Up (Weighted)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 19,
+          "weight_kg": 0,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Calf Raise",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 16,
+          "weight_kg": 0,
+          "rpe": 0.5,
+          "completed": true
+        },
+        {
+          "exercise_name": "Incline bench press ( Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 7,
+          "weight_kg": 70.5,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Hack Squat (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 9,
+          "weight_kg": 40,
+          "rpe": 0.5,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 28.35,
+          "rpe": 0,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69e79390c0867c35de893fc4",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T15:11:11.971Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e77daa4dd9749875cd859c",
+      "split_day_name": "Thursday — Push",
+      "started_at": "2026-04-21T13:37:45.738Z",
+      "finished_at": "2026-04-21T13:38:09.056Z",
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e76c7ed6187f2377488553",
+      "split_day_name": "Thursday — Push",
+      "started_at": "2026-04-21T12:24:28.951Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e76c5eb31bbc232d75ef16",
+      "split_day_name": "Thursday — Push",
+      "started_at": "2026-04-21T12:23:57.904Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Behind the Back Curl (Cable)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": null,
+          "completed": true
+        },
+        {
+          "exercise_name": "Behind the Back Curl (Cable)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": 0.5,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69e76bcc547970bca87a4056",
+      "split_day_name": "Thursday — Push",
+      "started_at": "2026-04-21T12:21:32.066Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e76a3ef0c71ff7aad527dc",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T12:14:53.640Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e768f0c53716054b9de3e1",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T12:09:19.629Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e756a94db96a748fa1e3d7",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T10:51:20.690Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e7568207369ad59e735dae",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T10:50:41.725Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e74a539b5f92603b513712",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T09:58:40.551Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e745c44d65e465e56a18ef",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T09:39:15.453Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e7447afc4a827bb254fa3a",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T09:33:46.298Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e7422ee51152030ebb46fc",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T09:23:55.180Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e7409212175c15b3cae1ed",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T09:17:05.149Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e7403682b060e696479040",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T09:15:34.188Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e73f393b8dba8fceec2d88",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T09:11:20.719Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e73dd73ee74de7f22c204c",
+      "split_day_name": "Monday — Full Body",
+      "started_at": "2026-04-21T09:05:27.279Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e64114799f3f8d76b7ca82",
+      "split_day_name": "Thursday — Push",
+      "started_at": "2026-04-20T15:07:00.138Z",
+      "finished_at": "2026-04-20T16:00:06.120Z",
+      "duration_minutes": 37,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "wrist Squeeze",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 15,
+          "weight_kg": 30,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Dead Hang",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 120,
+          "weight_kg": 0,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Lateral Raise (Cable)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 12,
+          "weight_kg": 7.5,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Bicep Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 11,
+          "weight_kg": 70.5,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Triceps Kickback (Cable)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 12,
+          "weight_kg": 28.5,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Preacher Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 65,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Overhead Triceps Extension (Cable)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 15,
+          "weight_kg": 65,
+          "rpe": 0.5,
+          "completed": true
+        },
+        {
+          "exercise_name": "Behind the Back Curl (Cable)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 7,
+          "weight_kg": 45,
+          "rpe": 1,
+          "completed": true
+        },
+        {
+          "exercise_name": "Lateral Raise (Cable)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 12,
+          "weight_kg": 7.5,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Triceps Kickback (Cable)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 13,
+          "weight_kg": 28.5,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Overhead Triceps Extension (Cable)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 12,
+          "weight_kg": 76,
+          "rpe": 0,
+          "completed": true
+        },
+        {
+          "exercise_name": "Behind the Back Curl (Cable)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 9,
+          "weight_kg": 45,
+          "rpe": 0,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69e5f8975d805a52915f2861",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-20T09:57:42.268Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e5f84b862683177f83a03f",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-20T09:56:26.689Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e5f0480ccf3069644d620c",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-20T09:22:15.744Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e5eab7eedbd88cae29bebb",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-20T08:58:31.229Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e5ea839ddf11a3f9e2ac0c",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-20T08:57:38.863Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e5ea6d11ee12e8182b4823",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-20T08:57:16.569Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e5ea3085d16d45350b4588",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-20T08:56:15.302Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e5e8c2b128114fcfb10c20",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-20T08:50:09.431Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e5e46b28e01a1241351c47",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-20T08:31:38.551Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e544e9613daf80cccb5691",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T21:11:04.557Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e5209fbecdc3572d1f9040",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T18:36:14.831Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4f05be7a333a990231499",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T15:10:19.072Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": 4,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69e4eeb2dd339f47322c9d92",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T15:03:13.659Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": 6,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": 4,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69e4ee6a720d1d1440880731",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T15:02:01.527Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4ee1e5f38d1509c1cbe27",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T15:00:42.611Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4edf8fbbda50ad179a0a7",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T15:00:07.851Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4edc1fddc3620e4f929df",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T14:59:12.812Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4ed9e6d1f55459066e7d9",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T14:58:38.091Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4ec3d4194cfa99a929559",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T14:52:44.377Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4ec20cde3ae5bda053df0",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T14:52:16.020Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4ec19f84be82a7992bd1d",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T14:52:08.677Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4eb7248e6e8c270920200",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T14:49:21.625Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4e6f2ef55eca748ec0d54",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T14:30:09.298Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4ded1398527fe47e9d059",
+      "split_day_name": "Thursday — Push",
+      "started_at": "2026-04-19T13:55:29.205Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4a420b509603bca2b0ff2",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T09:45:04.251Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4a420e96ccab87cbd1310",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T09:45:03.910Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e4a41137b36491a8c7deca",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T09:44:48.629Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e48f69e44c33ce66fdedb4",
+      "split_day_name": "Tuesday — Upper",
+      "started_at": "2026-04-19T08:16:40.623Z",
+      "finished_at": "2026-04-19T08:16:43.187Z",
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e48f5ee94d4f55b759d392",
+      "split_day_name": "Wednesday — Legs",
+      "started_at": "2026-04-19T08:16:29.206Z",
+      "finished_at": "2026-04-19T08:16:31.238Z",
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e48bbbdbb524b7870ceacc",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T08:00:56.053Z",
+      "finished_at": "2026-04-19T08:10:30.721Z",
+      "duration_minutes": 9,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e48b9456417e95ac7d6910",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T08:00:19.484Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e48b5bd055e623952b3234",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T07:59:23.417Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e48a0ea6c54c7297e50d09",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T07:53:50.297Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e48987f5ae47ad91c662bc",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-19T07:51:34.371Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e3497e0362398a6ea2f9d2",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-18T09:06:02.683Z",
+      "finished_at": "2026-04-18T09:06:39.371Z",
+      "duration_minutes": 1,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e2d56fbdafabab88a3b6d0",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-18T00:50:55.157Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e292a05e357766ba55cdb2",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-17T20:05:51.090Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e283d795063639e6a826ff",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-17T19:02:46.845Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e26ccbce1d468207dda8c0",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-17T17:24:26.719Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e26cbdffe2f15e6b113aac",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-17T17:24:13.273Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e2610ddcce175fc8496073",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-17T16:34:20.613Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e24f162ea2de766725f1a4",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-17T15:17:40.857Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e24cee5d6909d5eaa19f5d",
+      "split_day_name": "Wednesday — Legs",
+      "started_at": "2026-04-17T15:08:30.276Z",
+      "finished_at": "2026-04-17T15:11:49.196Z",
+      "duration_minutes": 3,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e24ce499e850755223b2c1",
+      "split_day_name": "Wednesday — Legs",
+      "started_at": "2026-04-17T15:08:19.304Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e24c3168fbec70f61ea14c",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-17T15:05:20.780Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e24b5fdcaed7d59f10fc91",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-17T15:01:50.864Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e246f15c160e1fb0d2f38b",
+      "split_day_name": "Wednesday — Legs",
+      "started_at": "2026-04-17T14:42:56.471Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e246c577c2eda0a6079dcd",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-17T14:42:13.147Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e12cbfadba6c06edec249a",
+      "split_day_name": "Thursday — Push",
+      "started_at": "2026-04-16T18:38:54.812Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e12cb35ad35bb6d8b5eb75",
+      "split_day_name": "Thursday — Push",
+      "started_at": "2026-04-16T18:38:42.513Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69e0f9f5cdf28a8cfd243644",
+      "split_day_name": "Wednesday — Legs",
+      "started_at": "2026-04-16T15:02:13.266Z",
+      "finished_at": "2026-04-16T15:41:46.067Z",
+      "duration_minutes": 9,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Calf Raise",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 16,
+          "weight_kg": 60,
+          "rpe": null,
+          "completed": true
+        },
+        {
+          "exercise_name": "Back Extension (Hyperextension)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 17,
+          "weight_kg": 0,
+          "rpe": null,
+          "completed": true
+        },
+        {
+          "exercise_name": "Hack Squat (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 6,
+          "weight_kg": 45,
+          "rpe": 10,
+          "completed": true
+        },
+        {
+          "exercise_name": "Hip Thrust (Barbell)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 90,
+          "rpe": 9,
+          "completed": true
+        },
+        {
+          "exercise_name": "Leg Extension (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 8,
+          "weight_kg": 45,
+          "rpe": 9,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Calf Raise",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 16,
+          "weight_kg": 60,
+          "rpe": null,
+          "completed": true
+        },
+        {
+          "exercise_name": "Back Extension (Hyperextension)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 17,
+          "weight_kg": 0,
+          "rpe": null,
+          "completed": true
+        },
+        {
+          "exercise_name": "Hip Thrust (Barbell)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 9,
+          "weight_kg": 90,
+          "rpe": 10,
+          "completed": true
+        },
+        {
+          "exercise_name": "Leg Extension (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 10,
+          "weight_kg": 45,
+          "rpe": 10,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69e0f221848d7d23763cec3c",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-16T14:28:49.333Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69dec01ec4b2a952217d5b95",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T22:30:54.247Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 4,
+          "weight_kg": 4,
+          "rpe": 6,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69debfe4f282faa599975019",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T22:29:54.896Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 2,
+          "weight_kg": 2,
+          "rpe": 6,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69debf41504d754e0bb0b198",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T22:27:12.974Z",
+      "finished_at": "2026-04-14T22:27:17.302Z",
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69debee003aae6e4fdb90354",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T22:25:35.362Z",
+      "finished_at": "2026-04-14T22:25:36.984Z",
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69debe7e28d20ba1e1aa1097",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T22:23:56.562Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69debe560b7e28637b22dd9b",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T22:23:17.230Z",
+      "finished_at": "2026-04-14T22:23:19.585Z",
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69debdc3fe3ffc4f6f708dc6",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T22:20:51.135Z",
+      "finished_at": "2026-04-14T22:20:53.137Z",
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69debc5eb1872d2fb393f6bf",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T22:14:53.861Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 300,
+          "weight_kg": 20,
+          "rpe": 7,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69dea70c7d3a2aeee742adeb",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T20:43:55.715Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 200,
+          "weight_kg": 20,
+          "rpe": 6,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69dea5df670521cf0898f156",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T20:38:54.471Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 200,
+          "weight_kg": 200,
+          "rpe": 6,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 200,
+          "weight_kg": 201,
+          "rpe": 6,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69de31ad6660eaa2cb1a21cd",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T12:23:09.198Z",
+      "finished_at": "2026-04-14T22:17:59.271Z",
+      "duration_minutes": 41,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Hack Squat (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 11,
+          "weight_kg": 12,
+          "rpe": 6,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 100,
+          "weight_kg": 100,
+          "rpe": 7,
+          "completed": true
+        },
+        {
+          "exercise_name": "Hack Squat (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 15,
+          "weight_kg": 15,
+          "rpe": 6,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 100,
+          "weight_kg": 100,
+          "rpe": 7,
+          "completed": true
+        },
+        {
+          "exercise_name": "Hack Squat (Machine)",
+          "set_number": 3,
+          "set_type": "normal",
+          "reps": 47,
+          "weight_kg": 100,
+          "rpe": 6,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69de300752943af5b1e84813",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T12:16:06.556Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69de2eeecc31f43038e04be3",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T12:11:25.814Z",
+      "finished_at": "2026-04-14T12:12:33.234Z",
+      "duration_minutes": 1,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 40,
+          "weight_kg": 30,
+          "rpe": 6,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 5,
+          "weight_kg": 8,
+          "rpe": 4,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69de2ea25992892d9af9b133",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T12:10:09.429Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69de2c937768ed68232afeeb",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T12:01:22.942Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": null,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69de2b0e88869eefbc87ccd5",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T11:54:53.778Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69de2adb33f4db108071ccad",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T11:54:02.668Z",
+      "finished_at": "2026-04-14T11:54:39.421Z",
+      "duration_minutes": 1,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 14,
+          "weight_kg": 20,
+          "rpe": null,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 14,
+          "weight_kg": 24,
+          "rpe": null,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69de2ad6d419349b74e055a0",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T11:53:57.458Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69de2ac8ea074e98937f21c7",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T11:53:43.930Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69de2aaa5900597525013f46",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T11:53:14.018Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69de2074ce9edb6d7a4e3bbf",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T11:09:39.629Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69de1c54b466c06d7e09988c",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T10:52:03.413Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69de1485298840f458b051bc",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T10:18:44.483Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69de13c285d5f32acdf0d925",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-14T10:15:29.856Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69dd6e6de76d315d8ae244a9",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-13T22:30:05.051Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69dd6e586a8a47a797e55745",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-13T22:29:44.156Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69dd6da32cf548f97776f2cb",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-13T22:26:42.362Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": null,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69dd6d405b0182a3f6d4b27d",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-13T22:25:04.185Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69daa3ea5b2839ea804ab361",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-11T19:41:30.436Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": null,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": null,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69d264fa974d382140ea7370",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-05T13:34:49.341Z",
+      "finished_at": "2026-04-05T13:35:07.432Z",
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 2,
+          "weight_kg": 0,
+          "rpe": null,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69d244e89b8dbe47a7cb4902",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-05T11:18:00.022Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 12,
+          "weight_kg": 20,
+          "rpe": null,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69d23ed3abdc299ec340ba70",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-05T10:52:02.743Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69d23ed258c158802d384348",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-05T10:52:02.437Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69d237c776cbbcb656c43562",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-05T10:21:59.098Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69d2322196a1d3b2b5d03e49",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-05T09:57:52.797Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69d230a4966726643e6a377d",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-05T09:51:31.546Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69d229b223997511c6e6bfd3",
+      "split_day_name": "Monday — Legs",
+      "started_at": "2026-04-05T09:21:53.554Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69d2280406caa4c72f4b32cc",
+      "split_day_name": "Thursday — Push",
+      "started_at": "2026-04-05T09:14:44.187Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69d22665c5a366cc99af182a",
+      "split_day_name": "Thursday — Push",
+      "started_at": "2026-04-05T09:07:48.601Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69d221d6f8f0982942798457",
+      "split_day_name": "Thursday — Push",
+      "started_at": "2026-04-05T08:48:21.611Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69d2204af8725f920b26969c",
+      "split_day_name": "Thursday — Push",
+      "started_at": "2026-04-05T08:41:46.025Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69cfb805898de14e6c2d6766",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-04-03T12:52:20.925Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Bench Press",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": null,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69cedca0e5dc26dd56f09cd1",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-04-02T21:16:15.433Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ced46e10417be637e4bf05",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-04-02T20:41:16.998Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ced3500941dbac4489e8b2",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-04-02T20:36:31.342Z",
+      "finished_at": "2026-04-02T20:39:46.608Z",
+      "duration_minutes": 2,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ced194caba7ff811d4bc70",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-04-02T20:29:08.639Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ced16e7117351b9272d1fb",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-04-02T20:28:30.403Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Bench Press",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 20,
+          "weight_kg": 30,
+          "rpe": 10,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69cecfd6d22f5ec50f6d9cb5",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-04-02T20:21:41.688Z",
+      "finished_at": "2026-04-02T20:34:23.200Z",
+      "duration_minutes": 10,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69cecc1dde03ee57d9f3855b",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-04-02T20:05:48.209Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69cecbabde03ee57d9f3841c",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-04-02T20:03:54.682Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69cecb7aa408965eebac5d9c",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-04-02T20:03:06.132Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69ceca4cd379d2dfc050009f",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-04-02T19:58:03.925Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69cec6a19c86ea43c42ee3e6",
+      "split_day_name": "Tuesday — Push",
+      "started_at": "2026-04-02T19:42:24.867Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69cec5737fcfd327302eaef8",
+      "split_day_name": "Tuesday — Push",
+      "started_at": "2026-04-02T19:37:23.051Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69cec54d8941cf3028f34d7d",
+      "split_day_name": "Tuesday — Push",
+      "started_at": "2026-04-02T19:36:45.127Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69cec51517c01e6baec5fabf",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-04-02T19:35:48.241Z",
+      "finished_at": "2026-04-02T19:36:31.799Z",
+      "duration_minutes": 1,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Bench Press",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 20,
+          "weight_kg": 30,
+          "rpe": 7,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69cec4ea96ea6b48d075fd46",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-04-02T19:35:06.077Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69cc2741e2b464c0d9520e64",
+      "split_day_name": "Tuesday — Upper",
+      "started_at": "2026-03-31T19:57:52.678Z",
+      "finished_at": "2026-03-31T19:58:54.973Z",
+      "duration_minutes": 1,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Chest Press (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": 7,
+          "completed": true
+        },
+        {
+          "exercise_name": "Chest Press (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": 7,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69cacf69d9a3bbce828a9162",
+      "split_day_name": "Monday — Pull",
+      "started_at": "2026-03-30T19:30:49.228Z",
+      "finished_at": "2026-03-30T19:31:38.208Z",
+      "duration_minutes": 1,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 9,
+          "weight_kg": 5,
+          "rpe": 7,
+          "completed": true
+        },
+        {
+          "exercise_name": "Seated Leg Curl (Machine)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": -1,
+          "weight_kg": 0,
+          "rpe": 7,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69c86986689f3589d711044c",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-03-28T23:51:34.321Z",
+      "finished_at": "2026-03-28T23:52:34.898Z",
+      "duration_minutes": 1,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Bench Press",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": 7,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69c844d9307ade8689ed643a",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-03-28T21:15:04.802Z",
+      "finished_at": "2026-03-28T22:00:27.738Z",
+      "duration_minutes": 18,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c80d83c4faa2bf068e6ac1",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-03-28T17:18:58.476Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c8068451f9e48035d8f941",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-03-28T16:49:07.581Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c7f4894b66386c97d94816",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-03-28T15:32:24.944Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c7f249e1a7ee1bdf2e8ed8",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-03-28T15:22:49.150Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Bench Press",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 40,
+          "weight_kg": 10,
+          "rpe": 7,
+          "completed": true
+        },
+        {
+          "exercise_name": "Bench Press",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": 7,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69c7f248d225017516777233",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-03-28T15:22:47.630Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c74842aa3c607f53ddae5c",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-03-28T03:17:22.266Z",
+      "finished_at": "2026-03-28T03:17:25.388Z",
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c747df395000de366a597a",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-03-28T03:15:42.650Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Dips (Chest)",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": 7,
+          "completed": true
+        },
+        {
+          "exercise_name": "Dips (Chest)",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": 7,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69c746346ebc340399a5b2d0",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-03-28T03:08:35.489Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c7458043deb8617f611eae",
+      "split_day_name": "Tuesday — Cardio",
+      "started_at": "2026-03-28T03:05:35.518Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c74548a393f080ce7db977",
+      "split_day_name": "Tuesday — Cardio",
+      "started_at": "2026-03-28T03:04:40.247Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c7444b51f2847dbb019fb3",
+      "split_day_name": "Tuesday — Cardio",
+      "started_at": "2026-03-28T03:00:27.136Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c7444245e3f5e9b0505306",
+      "split_day_name": "Monday — Pull",
+      "started_at": "2026-03-28T03:00:17.888Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c741f3db3f0cdd3d662411",
+      "split_day_name": "Tuesday — Cardio",
+      "started_at": "2026-03-28T02:50:26.358Z",
+      "finished_at": "2026-03-28T02:51:54.256Z",
+      "duration_minutes": 1,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c741ec9478d09badb9c921",
+      "split_day_name": "Monday — Pull",
+      "started_at": "2026-03-28T02:50:18.947Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c73ca8e855090bfbf23bcb",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-03-28T02:27:52.178Z",
+      "finished_at": null,
+      "duration_minutes": null,
+      "is_rest_day": false,
+      "sets": []
+    },
+    {
+      "id": "69c73a993db19ab7b27297a8",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-03-28T02:19:04.846Z",
+      "finished_at": "2026-03-28T02:22:15.861Z",
+      "duration_minutes": 3,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Bench Press",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": 7,
+          "completed": true
+        },
+        {
+          "exercise_name": "Bench Press",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 0,
+          "weight_kg": 0,
+          "rpe": 7,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "id": "69c739c61dbd065c1936c670",
+      "split_day_name": "Monday — Push",
+      "started_at": "2026-03-28T02:15:34.182Z",
+      "finished_at": "2026-03-28T02:18:16.013Z",
+      "duration_minutes": 3,
+      "is_rest_day": false,
+      "sets": [
+        {
+          "exercise_name": "Bench Press",
+          "set_number": 1,
+          "set_type": "normal",
+          "reps": 30,
+          "weight_kg": 40,
+          "rpe": 7,
+          "completed": true
+        },
+        {
+          "exercise_name": "Bench Press",
+          "set_number": 2,
+          "set_type": "normal",
+          "reps": 30,
+          "weight_kg": 50,
+          "rpe": 7,
+          "completed": true
+        },
+        {
+          "exercise_name": "Bench Press",
+          "set_number": 3,
+          "set_type": "normal",
+          "reps": 30,
+          "weight_kg": 50,
+          "rpe": 7,
+          "completed": true
+        }
+      ]
+    }
+  ]
+}
