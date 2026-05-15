@@ -15,12 +15,26 @@ import SplitImportExport from "@/components/SplitImportExport";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { StreakMilestone, isMilestoneStreak } from "@/components/StreakMilestone";
 
-function SessionTypePill({ type }: { type: string }) {
+function estimateWorkoutMinutes(day: SplitDay): number {
+  if (!day.exercises || day.exercises.length === 0) return 0;
+  let totalSeconds = 0;
+  for (const ex of day.exercises) {
+    const sets = ex.sets ?? 0;
+    const rest = ex.restSeconds ?? 60;
+    totalSeconds += sets * 60 + Math.max(0, sets - 1) * rest;
+  }
+  return Math.round(totalSeconds / 60);
+}
+
+function EstimatedTimePill({ day }: { day: SplitDay }) {
   const colors = useColors();
-  const color = SESSION_COLORS[type] ?? colors.primary;
+  const color = SESSION_COLORS[day.sessionType] ?? colors.primary;
+  const mins = estimateWorkoutMinutes(day);
+  if (mins === 0) return null;
   return (
-    <View style={[styles.pill, { backgroundColor: color + "22", borderColor: color + "55" }]}> 
-      <Text style={[styles.pillText, { color }]}>{type}</Text>
+    <View style={[styles.pill, { backgroundColor: color + "22", borderColor: color + "55" }]}>
+      <Ionicons name="time-outline" size={11} color={color} />
+      <Text style={[styles.pillText, { color }]}>~{mins} min</Text>
     </View>
   );
 }
@@ -39,7 +53,7 @@ function DayCard({ day, onStart }: { day: SplitDay; onStart: () => void }) {
       <View style={styles.dayCardInner}>
         <View style={styles.dayCardTop}>
           <Text style={[styles.dayName, { color: colors.mutedForeground }]}>{day.dayOfWeek}</Text>
-          <SessionTypePill type={day.sessionType || "Rest"} />
+          {isRest ? null : <EstimatedTimePill day={day} />}
         </View>
         <Text style={[styles.dayExerciseCount, { color: colors.foreground }]}> 
           {isRest ? "Recovery day" : day.sessionType || `${day.exercises.length} exercises`}
@@ -324,7 +338,7 @@ const styles = StyleSheet.create({
     borderRadius: 100, marginTop: 4,
   },
   startBtnText: { color: "#fff", fontSize: 12, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
-  pill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, borderWidth: 1 },
+  pill: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, borderWidth: 1 },
   pillText: { fontSize: 11, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
   empty: { alignItems: "center", paddingVertical: 60, gap: 12 },
   emptyIcon: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center" },
