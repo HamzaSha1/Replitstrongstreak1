@@ -11,6 +11,23 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
 
+### Firestore index deployment
+
+Composite indexes for Firestore are defined in `firestore.indexes.json` (root). To apply them:
+
+```bash
+# Prerequisites: Firebase CLI installed and logged in
+npm install -g firebase-tools   # one-time
+firebase login                  # one-time
+firebase use --add              # link to your Firebase project (one-time)
+
+# Deploy indexes only (safe, non-destructive)
+pnpm run deploy:indexes
+# equivalent: firebase deploy --only firestore:indexes
+```
+
+The `firebase.json` at the repo root points Firebase CLI to `firestore.indexes.json`. Index builds are asynchronous — Firestore reports build status in the Firebase console under Firestore → Indexes. Queries against `exerciseHistory` will return a "requires an index" error until the index finishes building.
+
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9

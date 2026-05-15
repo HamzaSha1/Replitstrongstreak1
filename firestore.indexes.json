@@ -1,0 +1,14 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "exerciseHistory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId",       "order": "ASCENDING"  },
+        { "fieldPath": "exerciseName", "order": "ASCENDING"  },
+        { "fieldPath": "performedAt",  "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
