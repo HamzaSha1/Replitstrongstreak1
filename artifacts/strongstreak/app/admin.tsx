@@ -85,14 +85,7 @@ function ReportCard({
     report.status === "pending" ? "#f59e0b" :
     report.status === "resolved" ? "#22c55e" : "#666";
 
-  const reportDate = report.createdAt
-    ? (typeof (report.createdAt as any).toDate === "function"
-        ? (report.createdAt as any).toDate()
-        : new Date(report.createdAt))
-    : null;
-  const timeAgo = reportDate && !isNaN(reportDate.getTime())
-    ? formatDistanceToNow(reportDate, { addSuffix: true })
-    : "";
+  const timeAgo = report.createdAt ? formatDistanceToNow(new Date(report.createdAt), { addSuffix: true }) : "";
 
   return (
     <View style={styles.reportCard}>
@@ -321,14 +314,7 @@ function UsersTab({ users, currentUid, onToggleAdmin, onDeleteUser }: {
       {filtered.map((u) => {
         const isYou = u.uid === currentUid;
         const initials = u.displayName.split(" ").map((w: string) => w[0]).join("").substring(0, 2).toUpperCase() || "?";
-        const createdAtDate = u.createdAt
-          ? (typeof (u.createdAt as any).toDate === "function"
-              ? (u.createdAt as any).toDate()
-              : new Date(u.createdAt))
-          : null;
-        const joinedAgo = createdAtDate && !isNaN(createdAtDate.getTime())
-          ? formatDistanceToNow(createdAtDate, { addSuffix: true })
-          : null;
+        const joinedAgo = u.createdAt ? formatDistanceToNow(new Date(u.createdAt), { addSuffix: true }) : null;
 
         return (
           <View key={u.uid} style={styles.userCard}>
@@ -669,7 +655,18 @@ export default function AdminDashboard() {
       });
 
       const allReports = await getDocs(query(collection(db, "reports"), orderBy("createdAt", "desc")));
-      setReports(allReports.docs.map((d) => d.data() as Report));
+      setReports(allReports.docs.map((d) => {
+        const r = d.data();
+        const raw = r.createdAt;
+        const createdAt = raw
+          ? (typeof raw.toDate === "function"
+              ? raw.toDate().toISOString()
+              : typeof raw === "object" && raw.seconds
+                ? new Date(raw.seconds * 1000).toISOString()
+                : String(raw))
+          : "";
+        return { ...r, createdAt } as Report;
+      }));
 
       setUsers(
         userSnap.docs.map((d) => {
@@ -680,7 +677,13 @@ export default function AdminDashboard() {
             handle: u.handle ?? "",
             email: u.email ?? "",
             isAdmin: u.isAdmin ?? false,
-            createdAt: u.createdAt ?? "",
+            createdAt: u.createdAt
+              ? (typeof u.createdAt.toDate === "function"
+                  ? u.createdAt.toDate().toISOString()
+                  : typeof u.createdAt === "object" && u.createdAt.seconds
+                    ? new Date(u.createdAt.seconds * 1000).toISOString()
+                    : String(u.createdAt))
+              : "",
             followersCount: u.followersCount ?? 0,
             postsCount: u.postsCount ?? 0,
           } as UserRecord;
