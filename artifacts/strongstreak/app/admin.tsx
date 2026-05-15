@@ -85,8 +85,13 @@ function ReportCard({
     report.status === "pending" ? "#f59e0b" :
     report.status === "resolved" ? "#22c55e" : "#666";
 
-  const timeAgo = report.createdAt
-    ? formatDistanceToNow(new Date(report.createdAt), { addSuffix: true })
+  const reportDate = report.createdAt
+    ? (typeof (report.createdAt as any).toDate === "function"
+        ? (report.createdAt as any).toDate()
+        : new Date(report.createdAt))
+    : null;
+  const timeAgo = reportDate && !isNaN(reportDate.getTime())
+    ? formatDistanceToNow(reportDate, { addSuffix: true })
     : "";
 
   return (
@@ -316,7 +321,14 @@ function UsersTab({ users, currentUid, onToggleAdmin, onDeleteUser }: {
       {filtered.map((u) => {
         const isYou = u.uid === currentUid;
         const initials = u.displayName.split(" ").map((w: string) => w[0]).join("").substring(0, 2).toUpperCase() || "?";
-        const joinedAgo = u.createdAt ? formatDistanceToNow(new Date(u.createdAt), { addSuffix: true }) : null;
+        const createdAtDate = u.createdAt
+          ? (typeof (u.createdAt as any).toDate === "function"
+              ? (u.createdAt as any).toDate()
+              : new Date(u.createdAt))
+          : null;
+        const joinedAgo = createdAtDate && !isNaN(createdAtDate.getTime())
+          ? formatDistanceToNow(createdAtDate, { addSuffix: true })
+          : null;
 
         return (
           <View key={u.uid} style={styles.userCard}>
