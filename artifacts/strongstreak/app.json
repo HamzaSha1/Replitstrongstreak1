@@ -14,17 +14,21 @@
       "backgroundColor": "#0D1629"
     },
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.base69c726762a424892bc419135.app",
       "buildNumber": "29",
       "infoPlist": {
         "NSCameraUsageDescription": "StrongStreak needs camera access to let you take photos for your workout posts.",
         "NSPhotoLibraryUsageDescription": "StrongStreak needs photo library access to let you pick photos for your workout posts.",
-        "NSPhotoLibraryAddUsageDescription": "StrongStreak needs permission to save photos."
+        "NSPhotoLibraryAddUsageDescription": "StrongStreak needs permission to save photos.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.base69c726762a424892bc419135.app"
+      "package": "com.base69c726762a424892bc419135.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -59,8 +63,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "strongstreak"
+        "projectId": "1b35884e-c01b-4f95-b3c3-54a1de878b26"
       }
-    }
+    },
+    "owner": "hamzashana"
   }
 }
