@@ -1573,8 +1573,8 @@ export default function ActiveWorkoutScreen() {
             completed: true,
             type: set.type,
             timestamp: now,
-            rir: set.rir !== "" && set.rir != null ? parseFloat(set.rir) : undefined,
-            rpe: set.rpe !== "" && set.rpe != null ? parseFloat(set.rpe) : undefined,
+            rir: set.rir !== "" && set.rir != null ? parseFloat(set.rir) : null,
+            rpe: set.rpe !== "" && set.rpe != null ? parseFloat(set.rpe) : null,
           });
         }
       });

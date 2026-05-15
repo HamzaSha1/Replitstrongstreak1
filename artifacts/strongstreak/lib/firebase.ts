@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "@firebase/app";
 import { initializeAuth, getAuth, getReactNativePersistence } from "@firebase/auth";
-import { getFirestore } from "@firebase/firestore";
+import { initializeFirestore, getFirestore } from "@firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const firebaseConfig = {
@@ -25,5 +25,11 @@ function getAuthInstance() {
 }
 
 export const auth = getAuthInstance();
+
+try {
+  initializeFirestore(app, { ignoreUndefinedProperties: true });
+} catch {
+  // already initialized on hot reload
+}
 export const db = getFirestore(app);
 export default app;

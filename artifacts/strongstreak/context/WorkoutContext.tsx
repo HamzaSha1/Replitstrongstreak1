@@ -60,8 +60,8 @@ export interface SetLog {
   completed: boolean;
   timestamp: string;
   type: SetType;
-  rir?: number;               // Reps In Reserve (0–4+)
-  rpe?: number;               // Rate of Perceived Exertion (1–10)
+  rir?: number | null;        // Reps In Reserve (0–4+)
+  rpe?: number | null;        // Rate of Perceived Exertion (1–10)
 }
 
 export interface WorkoutLog {
