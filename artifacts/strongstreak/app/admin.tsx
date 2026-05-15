@@ -759,7 +759,7 @@ export default function AdminDashboard() {
       </View>
 
       {/* Tab bar */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabBar}>
+      <View style={styles.tabBar}>
         {TABS.map(({ key, label, icon }) => {
           const isActive = activeTab === key;
           return (
@@ -778,7 +778,7 @@ export default function AdminDashboard() {
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+      </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {activeTab === "reports" && (
@@ -812,8 +812,8 @@ const styles = StyleSheet.create({
   headerBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
   headerCenter: { flexDirection: "row", alignItems: "center", gap: 8 },
   headerTitle: { color: "#fff", fontSize: 17, fontWeight: "700" },
-  tabBar: { paddingHorizontal: 12, paddingVertical: 8, gap: 6, borderBottomWidth: 1, borderBottomColor: "#1a1a1a" },
-  tabBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: "#1a1a1a" },
+  tabBar: { flexDirection: "row", paddingHorizontal: 12, paddingVertical: 8, gap: 6, borderBottomWidth: 1, borderBottomColor: "#1a1a1a" },
+  tabBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, paddingVertical: 8, borderRadius: 20, backgroundColor: "#1a1a1a" },
   tabBtnActive: { backgroundColor: "#FF4500" },
   tabBtnText: { color: "#888", fontSize: 13, fontWeight: "600" },
   tabBtnTextActive: { color: "#fff" },
