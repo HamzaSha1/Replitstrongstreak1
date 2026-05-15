@@ -77,6 +77,7 @@ export interface WorkoutLog {
   durationMinutes?: number;
   setLogs: SetLog[];
   notes: string;
+  exerciseNotes?: Record<string, string>; // per-exercise notes keyed by exercise name
   schemaVersion: number;      // bump when schema changes so stale writes are detectable
 }
 
@@ -113,7 +114,7 @@ interface WorkoutContextType {
   startWorkout: (split: Split, day: SplitDay) => void;
   logSet: (set: Omit<SetLog, "id" | "timestamp">) => void;
   updateSet: (setId: string, updates: Partial<SetLog>) => void;
-  finishWorkout: (notes: string, setLogs?: SetLog[]) => Promise<WorkoutLog>;
+  finishWorkout: (notes: string, setLogs?: SetLog[], exerciseNotes?: Record<string, string>) => Promise<WorkoutLog>;
   cancelWorkout: () => void;
   addWeightEntry: (entry: Omit<WeightEntry, "id" | "userId">) => Promise<void>;
   deleteWeightEntry: (id: string) => Promise<void>;
@@ -261,7 +262,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const finishWorkout = async (notes: string, setLogs?: SetLog[]): Promise<WorkoutLog> => {
+  const finishWorkout = async (notes: string, setLogs?: SetLog[], exerciseNotes?: Record<string, string>): Promise<WorkoutLog> => {
     if (!activeWorkout) throw new Error("No active workout");
     const finishedAt = new Date().toISOString();
     const durationMs = new Date(finishedAt).getTime() - new Date(activeWorkout.startedAt).getTime();
@@ -286,6 +287,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       durationMinutes,
       setLogs: logsToSave,
       notes,
+      exerciseNotes: exerciseNotes ?? {},
       schemaVersion: 2,
     };
 

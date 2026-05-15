@@ -1580,8 +1580,14 @@ export default function ActiveWorkoutScreen() {
       });
     }
 
+    const builtExerciseNotes: Record<string, string> = {};
+    localExercises.forEach((ex) => {
+      const note = extras[ex.id]?.notes?.trim();
+      if (note) builtExerciseNotes[ex.name] = note;
+    });
+
     try {
-      await finishWorkout(notes, builtSetLogs);
+      await finishWorkout(notes, builtSetLogs, builtExerciseNotes);
     } catch (err: any) {
       Alert.alert(
         "Save Failed",
