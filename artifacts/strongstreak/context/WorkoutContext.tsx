@@ -24,14 +24,14 @@ export interface Exercise {
   name: string;
   muscleGroup: string;
   sets: number;
-  reps: string;          // e.g. "8-12"
+  reps: string;
   weight: number;
   unit: "kg" | "lbs";
   restSeconds: number;
   notes: string;
   type: "strength" | "cardio";
-  rpe?: number;          // 1-10 Rate of Perceived Exertion
-  dropSetCount?: number; // how many drop sets
+  rpe?: number;
+  dropSetCount?: number;
   supersetGroup?: string;
 }
 
@@ -55,7 +55,7 @@ export interface SetLog {
   id: string;
   exerciseId: string;
   exerciseName: string;
-  muscleGroup: string;        // e.g. "Quads", "Chest" — for volume tracking
+  muscleGroup: string;
   setNumber: number;
   reps: number;
   weight: number;
@@ -63,8 +63,8 @@ export interface SetLog {
   completed: boolean;
   timestamp: string;
   type: SetType;
-  rir?: number | null;        // Reps In Reserve (0–4+)
-  rpe?: number | null;        // Rate of Perceived Exertion (1–10)
+  rir?: number | null;
+  rpe?: number | null;
 }
 
 export interface WorkoutLog {
@@ -72,7 +72,7 @@ export interface WorkoutLog {
   userId: string;
   splitId: string;
   splitName: string;
-  splitDayId: string;         // which day in the split was performed
+  splitDayId: string;
   dayLabel: string;
   sessionType: string;
   startedAt: string;
@@ -80,8 +80,8 @@ export interface WorkoutLog {
   durationMinutes?: number;
   setLogs: SetLog[];
   notes: string;
-  exerciseNotes?: Record<string, string>; // per-exercise notes keyed by exercise name
-  schemaVersion: number;      // bump when schema changes so stale writes are detectable
+  exerciseNotes?: Record<string, string>;
+  schemaVersion: number;
 }
 
 export interface WeightEntry {
@@ -128,7 +128,7 @@ export interface ExerciseHistoryEntry {
   splitDayId: string;
   sessionType: string;
   dayLabel: string;
-  performedAt: string;        // ISO string
+  performedAt: string;
   sets: ExerciseHistorySet[];
 }
 
@@ -155,6 +155,7 @@ interface WorkoutContextType {
   getLastWeightForExercise: (exerciseName: string) => { weight: number; unit: "kg" | "lbs" } | null;
   getExerciseHistory: (exerciseName: string) => Promise<ExerciseHistoryEntry[]>;
   getLastPerformance: (exerciseName: string) => Promise<ExerciseHistoryEntry | null>;
+  bulkImportWorkoutLogs: (logs: Omit<WorkoutLog, "userId">[]) => Promise<number>;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | null>(null);
@@ -211,11 +212,9 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const [weightUnit, setWeightUnitState] = useState<"kg" | "lbs">("kg");
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Real-time listeners
   useEffect(() => {
     if (!uid) return;
 
-    // Fallback: one-time fetch in case the real-time listener fails
     const fetchFallback = async () => {
       try {
         const [splitsSnap, logsSnap, weightSnap] = await Promise.all([
@@ -238,13 +237,8 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
 
     const unsubSplits = onSnapshot(
       query(collection(db, "splits"), where("userId", "==", uid)),
-      (snap) => {
-        setSplits(snap.docs.map((d) => d.data() as Split));
-      },
-      (err) => {
-        console.warn("splits listener error:", err.code, err.message);
-        fetchFallback();
-      }
+      (snap) => { setSplits(snap.docs.map((d) => d.data() as Split)); },
+      (err) => { console.warn("splits listener error:", err.code, err.message); fetchFallback(); }
     );
 
     const unsubLogs = onSnapshot(
@@ -255,10 +249,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         setWorkoutLogs(logs);
         setIsLoaded(true);
       },
-      (err) => {
-        console.warn("workoutLogs listener error:", err.code, err.message);
-        fetchFallback();
-      }
+      (err) => { console.warn("workoutLogs listener error:", err.code, err.message); fetchFallback(); }
     );
 
     const unsubWeight = onSnapshot(
@@ -268,15 +259,10 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setWeightEntries(entries);
       },
-      (err) => {
-        console.warn("weightEntries listener error:", err.code, err.message);
-      }
+      (err) => { console.warn("weightEntries listener error:", err.code, err.message); }
     );
 
-    // Always do an immediate one-time fetch so data appears even if the
-    // real-time listener takes a moment to connect or is blocked.
     fetchFallback();
-
     setIsLoaded(false);
     return () => { unsubSplits(); unsubLogs(); unsubWeight(); };
   }, [uid]);
@@ -284,10 +270,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const addSplit = async (split: Omit<Split, "id" | "createdAt">) => {
     const id = generateId();
     const newSplit: Split & { userId: string } = {
-      ...split,
-      id,
-      userId: uid,
-      createdAt: new Date().toISOString(),
+      ...split, id, userId: uid, createdAt: new Date().toISOString(),
     };
     await setDoc(doc(db, "splits", id), newSplit);
   };
@@ -323,10 +306,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const updateSet = (setId: string, updates: Partial<SetLog>) => {
     setActiveWorkout((prev) => {
       if (!prev) return null;
-      return {
-        ...prev,
-        setLogs: prev.setLogs.map((s) => (s.id === setId ? { ...s, ...updates } : s)),
-      };
+      return { ...prev, setLogs: prev.setLogs.map((s) => (s.id === setId ? { ...s, ...updates } : s)) };
     });
   };
 
@@ -337,9 +317,6 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     const durationMinutes = Math.round(durationMs / 60000);
     const id = generateId();
 
-    // Use the explicitly passed setLogs if provided (avoids async state timing bug
-    // where activeWorkout.setLogs is still [] when finishWorkout is called right
-    // after logSet() calls).
     const logsToSave = setLogs ?? activeWorkout.setLogs;
 
     const log: WorkoutLog = {
@@ -359,13 +336,9 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       schemaVersion: 2,
     };
 
-    // Use a single batch for the workoutLog + all exerciseHistory docs so the
-    // write is atomic — either everything saves or nothing does.
     const batch = writeBatch(db);
-
     batch.set(doc(db, "workoutLogs", id), log);
 
-    // Write one exerciseHistory doc per unique exercise
     const completedSets = logsToSave.filter((s) => s.completed);
     if (completedSets.length > 0) {
       const byExercise = new Map<string, SetLog[]>();
@@ -426,7 +399,21 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     setWeightUnitState(unit);
   };
 
-  // Returns the most recent logged weight for an exercise (for weight suggestions)
+  const bulkImportWorkoutLogs = async (logs: Omit<WorkoutLog, "userId">[]): Promise<number> => {
+    const CHUNK = 10;
+    let written = 0;
+    for (let i = 0; i < logs.length; i += CHUNK) {
+      const chunk = logs.slice(i, i + CHUNK);
+      await Promise.all(
+        chunk.map((log) =>
+          setDoc(doc(db, "workoutLogs", log.id), { ...log, userId: uid })
+        )
+      );
+      written += chunk.length;
+    }
+    return written;
+  };
+
   const getLastWeightForExercise = (exerciseName: string): { weight: number; unit: "kg" | "lbs" } | null => {
     for (const log of workoutLogs) {
       const match = log.setLogs.find(
@@ -437,7 +424,6 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     return null;
   };
 
-  // Returns all history entries for a given exercise, ordered newest-first
   const getExerciseHistory = async (exerciseName: string): Promise<ExerciseHistoryEntry[]> => {
     if (!uid) return [];
     try {
@@ -456,7 +442,6 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Returns the most recent history entry for an exercise, or null
   const getLastPerformance = async (exerciseName: string): Promise<ExerciseHistoryEntry | null> => {
     if (!uid) return null;
     try {
@@ -504,6 +489,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         getLastWeightForExercise,
         getExerciseHistory,
         getLastPerformance,
+        bulkImportWorkoutLogs,
       }}
     >
       {children}
