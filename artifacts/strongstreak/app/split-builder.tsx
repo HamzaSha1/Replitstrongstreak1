@@ -128,9 +128,9 @@ function DaySection({ day, onUpdateDay, onAddExercise }: {
 
   const handleSessionTypePress = (type: string) => {
     if (type === "Custom") {
+      // Don't change sessionType yet — just show the input
       setShowCustomInput(true);
       setCustomName("");
-      onUpdateDay({ ...day, sessionType: "" });
     } else {
       setShowCustomInput(false);
       setCustomName("");
@@ -138,9 +138,12 @@ function DaySection({ day, onUpdateDay, onAddExercise }: {
     }
   };
 
-  const handleCustomNameSubmit = () => {
+  const handleCustomNameSave = () => {
     const trimmed = customName.trim();
-    if (trimmed) onUpdateDay({ ...day, sessionType: trimmed });
+    if (trimmed) {
+      onUpdateDay({ ...day, sessionType: trimmed });
+      setShowCustomInput(false);
+    }
   };
 
   const isCustomPillActive = showCustomInput || isCustomType;
@@ -190,17 +193,25 @@ function DaySection({ day, onUpdateDay, onAddExercise }: {
           </ScrollView>
 
           {showCustomInput && (
-            <TextInput
-              style={[styles.customNameInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
-              placeholder="Workout name (e.g. Arms, Chest & Back…)"
-              placeholderTextColor={colors.mutedForeground}
-              value={customName}
-              onChangeText={setCustomName}
-              onBlur={handleCustomNameSubmit}
-              onSubmitEditing={handleCustomNameSubmit}
-              returnKeyType="done"
-              autoFocus
-            />
+            <View style={styles.customNameRow}>
+              <TextInput
+                style={[styles.customNameInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.foreground }]}
+                placeholder="e.g. Arms, Chest & Back…"
+                placeholderTextColor={colors.mutedForeground}
+                value={customName}
+                onChangeText={setCustomName}
+                onSubmitEditing={handleCustomNameSave}
+                returnKeyType="done"
+                autoFocus
+              />
+              <TouchableOpacity
+                style={[styles.customNameSaveBtn, { backgroundColor: colors.primary }]}
+                onPress={handleCustomNameSave}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="checkmark" size={18} color="#fff" />
+              </TouchableOpacity>
+            </View>
           )}
 
           {day.exercises.map((ex) => (
@@ -352,7 +363,9 @@ const styles = StyleSheet.create({
   sessionTypePills: { flexDirection: "row", gap: 6 },
   sessionTypeOption: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, borderWidth: 1 },
   sessionTypeOptionText: { fontSize: 13, fontWeight: "500", fontFamily: "Inter_500Medium" },
-  customNameInput: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontFamily: "Inter_500Medium", marginBottom: 4 },
+  customNameRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
+  customNameInput: { flex: 1, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontFamily: "Inter_500Medium" },
+  customNameSaveBtn: { width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   exerciseItem: { flexDirection: "row", alignItems: "center", borderRadius: 10, borderWidth: 1, padding: 12 },
   exerciseItemInfo: { flex: 1 },
   exerciseItemName: { fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
