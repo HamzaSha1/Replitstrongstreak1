@@ -32,6 +32,12 @@ service cloud.firestore {
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
     }
 
+    // Exercise history — private to owner
+    match /exerciseHistory/{id} {
+      allow read, update, delete: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+    }
+
     // Posts — public posts readable by all auth users; write only by owner
     match /posts/{id} {
       allow read: if isAuth();

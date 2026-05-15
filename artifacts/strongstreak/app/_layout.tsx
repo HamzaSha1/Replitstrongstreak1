@@ -49,6 +49,7 @@ function RootLayoutNav() {
       <Stack.Screen name="split-builder" options={{ headerShown: false, presentation: "fullScreenModal" }} />
       <Stack.Screen name="active-workout" options={{ headerShown: false }} />
       <Stack.Screen name="admin" options={{ headerShown: false, presentation: "fullScreenModal" }} />
+      <Stack.Screen name="exercise-history" options={{ headerShown: false }} />
     </Stack>
   );
 }

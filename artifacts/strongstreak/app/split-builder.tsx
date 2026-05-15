@@ -216,10 +216,14 @@ function DaySection({ day, onUpdateDay, onAddExercise }: {
 
           {day.exercises.map((ex) => (
             <View key={ex.id} style={[styles.exerciseItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
-              <View style={styles.exerciseItemInfo}>
+              <TouchableOpacity
+                style={styles.exerciseItemInfo}
+                onPress={() => router.push(`/exercise-history?name=${encodeURIComponent(ex.name)}`)}
+                activeOpacity={0.7}
+              >
                 <Text style={[styles.exerciseItemName, { color: colors.foreground }]}>{ex.name}</Text>
                 <Text style={[styles.exerciseItemMeta, { color: colors.mutedForeground }]}>{ex.sets}×{ex.reps} · {ex.restSeconds}s rest</Text>
-              </View>
+              </TouchableOpacity>
               <TouchableOpacity onPress={() => removeExercise(ex.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <Ionicons name="trash-outline" size={16} color={colors.mutedForeground} />
               </TouchableOpacity>

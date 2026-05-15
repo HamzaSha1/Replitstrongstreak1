@@ -14,9 +14,8 @@ import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SESSION_COLORS, EXERCISE_LIBRARY } from "@/components/ExerciseData";
-import type { Exercise, WorkoutLog, SetLog } from "@/context/WorkoutContext";
+import type { Exercise, WorkoutLog, SetLog, ExerciseHistoryEntry } from "@/context/WorkoutContext";
 import RestTimerModal, { type GameType, type RestNotification } from "@/components/RestTimerModal";
-import ExerciseHistoryModal from "@/components/ExerciseHistoryModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -56,6 +55,35 @@ function useWorkoutTimer(running: boolean) {
   const fmt = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
   return { elapsed, formatted: fmt(elapsed) };
+}
+
+function formatHistoryEntry(entry: ExerciseHistoryEntry, fallbackUnit: "kg" | "lbs"): string {
+  const sets = entry.sets;
+  if (sets.length === 0) return "";
+  const maxWeight = Math.max(...sets.map((s) => s.weight));
+  const avgReps = Math.round(sets.reduce((acc, s) => acc + s.reps, 0) / sets.length);
+  const unit = sets[0].unit ?? fallbackUnit;
+  const dateStr = new Date(entry.performedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return `Last: ${sets.length} × ${avgReps} @ ${maxWeight}${unit} · ${dateStr}`;
+}
+
+function getLastSessionSummary(exerciseName: string, workoutLogs: WorkoutLog[]): string | null {
+  const name = exerciseName.toLowerCase();
+  const sorted = [...workoutLogs]
+    .filter((l) => !!l.finishedAt)
+    .sort((a, b) => new Date(b.finishedAt!).getTime() - new Date(a.finishedAt!).getTime());
+  for (const log of sorted) {
+    const sets = (log.setLogs ?? [])
+      .filter((s) => s.exerciseName.toLowerCase() === name && s.completed)
+      .sort((a, b) => a.setNumber - b.setNumber);
+    if (sets.length === 0) continue;
+    const maxWeight = Math.max(...sets.map((s) => s.weight));
+    const avgReps = Math.round(sets.reduce((acc, s) => acc + s.reps, 0) / sets.length);
+    const unit = sets[0].unit;
+    const dateStr = new Date(log.finishedAt!).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return `Last: ${sets.length} × ${avgReps} @ ${maxWeight}${unit} · ${dateStr}`;
+  }
+  return null;
 }
 
 function getPrevSets(exerciseName: string, workoutLogs: WorkoutLog[]): LocalSet[] {
@@ -832,9 +860,33 @@ function ExerciseCardImpl({ exercise, sets, prevSets, weightUnit, extra, isDragM
   onSwipeIdle?: () => void;
 }) {
   const colors = useColors();
-  const { workoutLogs, weightUnit: ctxWeightUnit } = useWorkout();
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const { workoutLogs, weightUnit: ctxWeightUnit, getLastPerformance } = useWorkout();
   const [repPickerOpen, setRepPickerOpen] = useState(false);
+
+  // Derived from already-loaded workoutLogs — instant, shown immediately
+  const lastFromLogs = useMemo(
+    () => getLastSessionSummary(exercise.name, workoutLogs),
+    [exercise.name, workoutLogs]
+  );
+
+  // Fetched from exerciseHistory Firestore collection (new source of truth).
+  // undefined = still loading; null = no history doc yet; string = formatted summary
+  const [lastFromHistory, setLastFromHistory] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let cancelled = false;
+    getLastPerformance(exercise.name)
+      .then((entry) => {
+        if (cancelled) return;
+        setLastFromHistory(entry ? formatHistoryEntry(entry, ctxWeightUnit) : null);
+      })
+      .catch(() => { if (!cancelled) setLastFromHistory(null); });
+    return () => { cancelled = true; };
+  }, [exercise.name]);
+
+  // Use exerciseHistory result when available; fall back to workoutLogs for
+  // exercises that pre-date the history collection (no backfill migration)
+  const lastSessionSummary =
+    lastFromHistory != null ? lastFromHistory : lastFromLogs;
   const [rangeFirst, setRangeFirst] = useState<string | null>(null);
   const [pickerMode, setPickerMode] = useState<"reps" | "time">(extra.repMode);
   const [lightboxUri, setLightboxUri] = useState<string | null>(null);
@@ -1014,10 +1066,10 @@ function ExerciseCardImpl({ exercise, sets, prevSets, weightUnit, extra, isDragM
           )}
         </TouchableOpacity>
 
-        {/* Name + meta — tap = history, long press = drag/reorder */}
+        {/* Name + meta — tap = history screen, long press = drag/reorder */}
         <TouchableOpacity
           style={{ flex: 1 }}
-          onPress={() => setHistoryModalOpen(true)}
+          onPress={() => router.push(`/exercise-history?name=${encodeURIComponent(exercise.name)}`)}
           onLongPress={handleLongPressName}
           delayLongPress={500}
           activeOpacity={0.7}
@@ -1055,6 +1107,19 @@ function ExerciseCardImpl({ exercise, sets, prevSets, weightUnit, extra, isDragM
           <Text style={[styles.exProgressText, { color: colors.mutedForeground }]}>{completedCount}/{sets.length}</Text>
         </View>
       </View>
+
+      {/* Last session indicator */}
+      {lastSessionSummary && (
+        <TouchableOpacity
+          style={[styles.lastSessionRow, { borderTopColor: colors.border }]}
+          onPress={() => router.push(`/exercise-history?name=${encodeURIComponent(exercise.name)}`)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="time-outline" size={11} color={colors.primary} />
+          <Text style={[styles.lastSessionText, { color: colors.primary }]}>{lastSessionSummary}</Text>
+          <Ionicons name="chevron-forward" size={11} color={colors.primary + "80"} />
+        </TouchableOpacity>
+      )}
 
       {/* ── Inline Rep Range Picker ──────────────────────────────────────────── */}
       {repPickerOpen && !isCardio && (
@@ -1247,15 +1312,6 @@ function ExerciseCardImpl({ exercise, sets, prevSets, weightUnit, extra, isDragM
           )}
         </View>
       )}
-
-      {/* Full exercise history modal */}
-      <ExerciseHistoryModal
-        visible={historyModalOpen}
-        exerciseName={exercise.name}
-        workoutLogs={workoutLogs}
-        weightUnit={weightUnit}
-        onClose={() => setHistoryModalOpen(false)}
-      />
 
       {/* Per-exercise timer (shown in time mode) */}
       {extra.timerVisible && (
@@ -1933,6 +1989,15 @@ const styles = StyleSheet.create({
   // Add set
   addSetBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, margin: 10, marginTop: 6, paddingVertical: 9, borderWidth: 1, borderStyle: "dashed", borderRadius: 10 },
   addSetText: { fontSize: 12, fontWeight: "500", fontFamily: "Inter_500Medium" },
+  lastSessionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  lastSessionText: { flex: 1, fontSize: 11, fontFamily: "Inter_500Medium" },
 
   // Notes
   notesToggle: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 9, borderTopWidth: StyleSheet.hairlineWidth },

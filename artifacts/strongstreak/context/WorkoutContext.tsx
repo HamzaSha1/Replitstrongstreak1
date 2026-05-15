@@ -10,6 +10,9 @@ import {
   onSnapshot,
   serverTimestamp,
   Timestamp,
+  writeBatch,
+  orderBy,
+  limit,
 } from "@firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
@@ -102,6 +105,33 @@ export interface ActiveWorkoutState {
   startedAt: string;
 }
 
+// ─── Exercise History Types ───────────────────────────────────────────────────
+
+export interface ExerciseHistorySet {
+  setNumber: number;
+  reps: number;
+  weight: number;
+  unit: "kg" | "lbs";
+  type: SetType;
+  rir?: number | null;
+  rpe?: number | null;
+}
+
+export interface ExerciseHistoryEntry {
+  id: string;
+  userId: string;
+  exerciseName: string;
+  muscleGroup: string;
+  workoutLogId: string;
+  splitId: string;
+  splitName: string;
+  splitDayId: string;
+  sessionType: string;
+  dayLabel: string;
+  performedAt: string;        // ISO string
+  sets: ExerciseHistorySet[];
+}
+
 interface WorkoutContextType {
   splits: Split[];
   workoutLogs: WorkoutLog[];
@@ -123,6 +153,8 @@ interface WorkoutContextType {
   streak: number;
   longestStreak: number;
   getLastWeightForExercise: (exerciseName: string) => { weight: number; unit: "kg" | "lbs" } | null;
+  getExerciseHistory: (exerciseName: string) => Promise<ExerciseHistoryEntry[]>;
+  getLastPerformance: (exerciseName: string) => Promise<ExerciseHistoryEntry | null>;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | null>(null);
@@ -327,7 +359,53 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       schemaVersion: 2,
     };
 
-    await setDoc(doc(db, "workoutLogs", id), log);
+    // Use a single batch for the workoutLog + all exerciseHistory docs so the
+    // write is atomic — either everything saves or nothing does.
+    const batch = writeBatch(db);
+
+    batch.set(doc(db, "workoutLogs", id), log);
+
+    // Write one exerciseHistory doc per unique exercise
+    const completedSets = logsToSave.filter((s) => s.completed);
+    if (completedSets.length > 0) {
+      const byExercise = new Map<string, SetLog[]>();
+      for (const s of completedSets) {
+        const key = s.exerciseName;
+        if (!byExercise.has(key)) byExercise.set(key, []);
+        byExercise.get(key)!.push(s);
+      }
+
+      for (const [exerciseName, sets] of byExercise.entries()) {
+        const historyId = generateId();
+        const historyEntry: ExerciseHistoryEntry = {
+          id: historyId,
+          userId: uid,
+          exerciseName,
+          muscleGroup: sets[0]?.muscleGroup ?? "",
+          workoutLogId: id,
+          splitId: activeWorkout.splitId,
+          splitName: activeWorkout.splitName,
+          splitDayId: activeWorkout.splitDayId ?? "",
+          sessionType: activeWorkout.sessionType,
+          dayLabel: activeWorkout.dayLabel,
+          performedAt: finishedAt,
+          sets: sets
+            .sort((a, b) => a.setNumber - b.setNumber)
+            .map((s) => ({
+              setNumber: s.setNumber,
+              reps: s.reps,
+              weight: s.weight,
+              unit: s.unit,
+              type: s.type,
+              rir: s.rir ?? null,
+              rpe: s.rpe ?? null,
+            })),
+        };
+        batch.set(doc(db, "exerciseHistory", historyId), historyEntry);
+      }
+    }
+
+    await batch.commit();
     setActiveWorkout(null);
     return log;
   };
@@ -359,6 +437,46 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     return null;
   };
 
+  // Returns all history entries for a given exercise, ordered newest-first
+  const getExerciseHistory = async (exerciseName: string): Promise<ExerciseHistoryEntry[]> => {
+    if (!uid) return [];
+    try {
+      const snap = await getDocs(
+        query(
+          collection(db, "exerciseHistory"),
+          where("userId", "==", uid),
+          where("exerciseName", "==", exerciseName),
+          orderBy("performedAt", "desc")
+        )
+      );
+      return snap.docs.map((d) => d.data() as ExerciseHistoryEntry);
+    } catch (err) {
+      console.warn("getExerciseHistory error:", err);
+      return [];
+    }
+  };
+
+  // Returns the most recent history entry for an exercise, or null
+  const getLastPerformance = async (exerciseName: string): Promise<ExerciseHistoryEntry | null> => {
+    if (!uid) return null;
+    try {
+      const snap = await getDocs(
+        query(
+          collection(db, "exerciseHistory"),
+          where("userId", "==", uid),
+          where("exerciseName", "==", exerciseName),
+          orderBy("performedAt", "desc"),
+          limit(1)
+        )
+      );
+      if (snap.empty) return null;
+      return snap.docs[0].data() as ExerciseHistoryEntry;
+    } catch (err) {
+      console.warn("getLastPerformance error:", err);
+      return null;
+    }
+  };
+
   const { streak, longestStreak } = calculateStreaks(workoutLogs);
 
   return (
@@ -384,6 +502,8 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         streak,
         longestStreak,
         getLastWeightForExercise,
+        getExerciseHistory,
+        getLastPerformance,
       }}
     >
       {children}
