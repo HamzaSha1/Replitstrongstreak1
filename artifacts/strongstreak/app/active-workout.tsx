@@ -737,8 +737,8 @@ function SetRow({ set, prevSet, weightUnit, repMode, isCardio, onUpdate, onCompl
                   editable={!set.completed}
                 />
               )}
-              <View style={[styles.rirBadge, { backgroundColor: set.rir ? colors.primary + "20" : colors.muted, borderColor: set.rir ? colors.primary + "50" : colors.border }]}>
-                <Text style={[styles.rirBadgeText, { color: set.rir ? colors.primary : colors.mutedForeground + "50" }]}>
+              <View style={[styles.rirBadge, { backgroundColor: set.rir && !set.prefilled ? colors.primary + "20" : colors.muted, borderColor: set.rir && !set.prefilled ? colors.primary + "50" : colors.border }]}>
+                <Text style={[styles.rirBadgeText, { color: set.rir && !set.prefilled ? colors.primary : colors.mutedForeground + "50" }]}>
                   {set.rir || "—"}
                 </Text>
               </View>
