@@ -553,27 +553,51 @@ function EditExercisesModal({ exercises, onAdd, onRemove, onClose }: {
 
 // ─── SummaryModal ─────────────────────────────────────────────────────────────
 
-function SummaryModal({ visible, exercises, allSets, elapsed, shareOnFeed, notes, onShareToggle, onNotesChange, onFinish }: {
+function SummaryModal({ visible, exercises, allSets, elapsed, shareOnFeed, notes, shareCaption, shareVisibility, onShareToggle, onNotesChange, onShareCaptionChange, onShareVisibilityChange, onFinish }: {
   visible: boolean;
   exercises: Exercise[];
   allSets: Record<string, LocalSet[]>;
   elapsed: number;
   shareOnFeed: boolean;
   notes: string;
+  shareCaption: string;
+  shareVisibility: "public" | "private";
   onShareToggle: () => void;
   onNotesChange: (s: string) => void;
+  onShareCaptionChange: (s: string) => void;
+  onShareVisibilityChange: (v: "public" | "private") => void;
   onFinish: () => void;
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const completedTotal = Object.values(allSets).flat().filter((s) => s.completed).length;
+
+  const completedSets = Object.values(allSets).flat().filter((s) => s.completed);
+  const completedTotal = completedSets.length;
   const durationMins = Math.round(elapsed / 60);
+  const totalReps = completedSets.reduce((sum, s) => sum + (parseInt(s.reps) || 0), 0);
+  const totalVolume = completedSets.reduce((sum, s) => sum + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0);
+
+  // Top muscle group by volume
+  const volumeByMuscle: Record<string, number> = {};
+  Object.entries(allSets).forEach(([exId, sets]) => {
+    const ex = exercises.find((e) => e.id === exId);
+    if (!ex) return;
+    const vol = sets.filter((s) => s.completed).reduce((sum, s) => sum + (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0), 0);
+    if (vol > 0) volumeByMuscle[ex.muscleGroup] = (volumeByMuscle[ex.muscleGroup] || 0) + vol;
+  });
+  const topMuscle = Object.entries(volumeByMuscle).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+  const volumeDisplay = totalVolume >= 1000
+    ? `${(totalVolume / 1000).toFixed(1)}k`
+    : totalVolume > 0 ? totalVolume.toFixed(0) : "—";
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <View style={[styles.summaryContainer, { backgroundColor: colors.background, paddingTop: insets.top + 20 }]}>
-        <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }}>
-          <Text style={[styles.summaryTitle, { color: colors.foreground }]}>Workout Complete! 🎉</Text>
+        <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+          <Text style={[styles.summaryTitle, { color: colors.foreground }]}>Workout Complete!</Text>
+
+          {/* Primary stats */}
           <View style={[styles.statsRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: colors.primary }]}>{durationMins}m</Text>
@@ -582,7 +606,7 @@ function SummaryModal({ visible, exercises, allSets, elapsed, shareOnFeed, notes
             <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
             <View style={styles.statBox}>
               <Text style={[styles.statValue, { color: colors.primary }]}>{completedTotal}</Text>
-              <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Sets Done</Text>
+              <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Sets</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
             <View style={styles.statBox}>
@@ -590,6 +614,36 @@ function SummaryModal({ visible, exercises, allSets, elapsed, shareOnFeed, notes
               <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Exercises</Text>
             </View>
           </View>
+
+          {/* Achievement stats */}
+          <View style={[styles.achievementsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.achievementsTitle, { color: colors.mutedForeground }]}>ACHIEVEMENTS</Text>
+            <View style={styles.achievementsGrid}>
+              <View style={styles.achievementItem}>
+                <Ionicons name="barbell-outline" size={20} color={colors.primary} />
+                <Text style={[styles.achievementValue, { color: colors.foreground }]}>{totalReps}</Text>
+                <Text style={[styles.achievementLabel, { color: colors.mutedForeground }]}>Total Reps</Text>
+              </View>
+              <View style={[styles.achievementDivider, { backgroundColor: colors.border }]} />
+              <View style={styles.achievementItem}>
+                <Ionicons name="trending-up-outline" size={20} color={colors.primary} />
+                <Text style={[styles.achievementValue, { color: colors.foreground }]}>{volumeDisplay}</Text>
+                <Text style={[styles.achievementLabel, { color: colors.mutedForeground }]}>Volume (kg)</Text>
+              </View>
+              {topMuscle ? (
+                <>
+                  <View style={[styles.achievementDivider, { backgroundColor: colors.border }]} />
+                  <View style={styles.achievementItem}>
+                    <Ionicons name="trophy-outline" size={20} color="#f59e0b" />
+                    <Text style={[styles.achievementValue, { color: colors.foreground }]} numberOfLines={1}>{topMuscle}</Text>
+                    <Text style={[styles.achievementLabel, { color: colors.mutedForeground }]}>Top Muscle</Text>
+                  </View>
+                </>
+              ) : null}
+            </View>
+          </View>
+
+          {/* Session notes */}
           <View style={[styles.notesCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.notesLabel, { color: colors.mutedForeground }]}>SESSION NOTES</Text>
             <TextInput
@@ -601,10 +655,48 @@ function SummaryModal({ visible, exercises, allSets, elapsed, shareOnFeed, notes
               multiline
             />
           </View>
+
+          {/* Share toggle */}
           <TouchableOpacity style={[styles.shareRow, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={onShareToggle} activeOpacity={0.8}>
             <Ionicons name={shareOnFeed ? "checkbox" : "square-outline"} size={20} color={shareOnFeed ? colors.primary : colors.mutedForeground} />
             <Text style={[styles.shareText, { color: colors.foreground }]}>Share on feed</Text>
           </TouchableOpacity>
+
+          {/* Share options (expanded when toggle is on) */}
+          {shareOnFeed && (
+            <View style={[styles.shareOptions, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.notesLabel, { color: colors.mutedForeground }]}>CAPTION</Text>
+              <TextInput
+                style={[styles.captionInput, { color: colors.foreground, borderColor: colors.border }]}
+                value={shareCaption}
+                onChangeText={onShareCaptionChange}
+                placeholder="Add a caption..."
+                placeholderTextColor={colors.mutedForeground}
+                multiline
+                maxLength={300}
+              />
+              <Text style={[styles.notesLabel, { color: colors.mutedForeground, marginTop: 12 }]}>VISIBILITY</Text>
+              <View style={styles.visibilityRow}>
+                <TouchableOpacity
+                  style={[styles.visibilityBtn, { borderColor: shareVisibility === "public" ? colors.primary : colors.border, backgroundColor: shareVisibility === "public" ? colors.primary + "18" : "transparent" }]}
+                  onPress={() => onShareVisibilityChange("public")}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="globe-outline" size={14} color={shareVisibility === "public" ? colors.primary : colors.mutedForeground} />
+                  <Text style={[styles.visibilityLabel, { color: shareVisibility === "public" ? colors.primary : colors.mutedForeground }]}>Public</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.visibilityBtn, { borderColor: shareVisibility === "private" ? colors.primary : colors.border, backgroundColor: shareVisibility === "private" ? colors.primary + "18" : "transparent" }]}
+                  onPress={() => onShareVisibilityChange("private")}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="lock-closed-outline" size={14} color={shareVisibility === "private" ? colors.primary : colors.mutedForeground} />
+                  <Text style={[styles.visibilityLabel, { color: shareVisibility === "private" ? colors.primary : colors.mutedForeground }]}>Followers only</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
           <TouchableOpacity style={[styles.finishSummaryBtn, { backgroundColor: colors.primary }]} onPress={onFinish} activeOpacity={0.85}>
             <Ionicons name="flag" size={18} color={colors.primaryForeground} />
             <Text style={[styles.finishSummaryText, { color: colors.primaryForeground }]}>{shareOnFeed ? "Post & Finish" : "Finish"}</Text>
@@ -1409,6 +1501,8 @@ export default function ActiveWorkoutScreen() {
   const [showSummary, setShowSummary] = useState(false);
   const [notes, setNotes] = useState("");
   const [shareOnFeed, setShareOnFeed] = useState(true);
+  const [shareCaption, setShareCaption] = useState("");
+  const [shareVisibility, setShareVisibility] = useState<"public" | "private">("public");
   const [showStreak, setShowStreak] = useState(false);
   const [dragMode, setDragMode] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -1624,6 +1718,8 @@ export default function ActiveWorkoutScreen() {
   // ─── Finish ─────────────────────────────────────────────────────────────────
 
   const handleFinish = () => {
+    const autoCaption = `Just crushed ${activeWorkout.sessionType} day — ${Math.round(elapsed / 60)} min in the books 💪`;
+    setShareCaption((prev) => prev || autoCaption);
     if (!allDone) {
       Alert.alert("Finish Workout", `${totalSets - completedTotal} sets still incomplete. Finish anyway?`, [
         { text: "Cancel", style: "cancel" },
@@ -1690,13 +1786,14 @@ export default function ActiveWorkoutScreen() {
 
     if (shareOnFeed) {
       await addPost({
-        content: `Crushed ${activeWorkout.sessionType} day! ${Math.round(elapsed / 60)} min in the books 💪`,
+        content: shareCaption.trim() || `Crushed ${activeWorkout.sessionType} day! ${Math.round(elapsed / 60)} min in the books 💪`,
         workoutSummary: {
           splitName: activeWorkout.splitName,
           sessionType: activeWorkout.sessionType,
           durationMinutes: Math.round(elapsed / 60),
           exerciseCount: localExercises.length,
         },
+        visibility: shareVisibility,
       });
     }
 
@@ -1844,8 +1941,12 @@ export default function ActiveWorkoutScreen() {
         elapsed={elapsed}
         shareOnFeed={shareOnFeed}
         notes={notes}
+        shareCaption={shareCaption}
+        shareVisibility={shareVisibility}
         onShareToggle={() => setShareOnFeed((v) => !v)}
         onNotesChange={setNotes}
+        onShareCaptionChange={setShareCaption}
+        onShareVisibilityChange={setShareVisibility}
         onFinish={handleSummaryFinish}
       />
 
@@ -2064,11 +2165,23 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 22, fontWeight: "700", fontFamily: "Inter_700Bold" },
   statLabel: { fontSize: 12, fontFamily: "Inter_400Regular" },
   statDivider: { width: StyleSheet.hairlineWidth },
+  achievementsCard: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 12 },
+  achievementsTitle: { fontSize: 11, fontFamily: "Inter_600SemiBold", textTransform: "uppercase", letterSpacing: 0.8 },
+  achievementsGrid: { flexDirection: "row", alignItems: "center" },
+  achievementItem: { flex: 1, alignItems: "center", gap: 4 },
+  achievementValue: { fontSize: 16, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  achievementLabel: { fontSize: 11, fontFamily: "Inter_400Regular", textAlign: "center" },
+  achievementDivider: { width: StyleSheet.hairlineWidth, alignSelf: "stretch" },
   notesCard: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 6 },
   notesLabel: { fontSize: 11, fontFamily: "Inter_600SemiBold", textTransform: "uppercase", letterSpacing: 0.8 },
   notesInput: { fontSize: 15, fontFamily: "Inter_400Regular", minHeight: 56 },
   shareRow: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 14, borderWidth: 1, padding: 14 },
   shareText: { fontSize: 14, fontFamily: "Inter_500Medium" },
+  shareOptions: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 6 },
+  captionInput: { fontSize: 15, fontFamily: "Inter_400Regular", minHeight: 72, borderWidth: 1, borderRadius: 10, padding: 10, marginTop: 6 },
+  visibilityRow: { flexDirection: "row", gap: 8, marginTop: 6 },
+  visibilityBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderWidth: 1, borderRadius: 10, paddingVertical: 9 },
+  visibilityLabel: { fontSize: 13, fontFamily: "Inter_500Medium" },
   finishSummaryBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 16, paddingVertical: 16 },
   finishSummaryText: { fontSize: 16, fontWeight: "700", fontFamily: "Inter_700Bold" },
 });
