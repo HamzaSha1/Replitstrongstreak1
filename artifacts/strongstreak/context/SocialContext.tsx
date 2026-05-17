@@ -94,6 +94,7 @@ interface SocialContextType {
   isLoaded: boolean;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
   addPost: (post: Omit<Post, "id" | "createdAt" | "likesCount" | "likedBy" | "userId" | "userDisplayName" | "userHandle">) => Promise<void>;
+  updatePost: (id: string, updates: Pick<Post, "content" | "visibility">) => Promise<void>;
   deletePost: (id: string) => Promise<void>;
   toggleLike: (postId: string) => Promise<void>;
   createGroup: (group: Omit<Group, "id" | "createdAt" | "members" | "memberCount" | "inviteCode" | "groupStreak">) => Promise<Group>;
@@ -220,6 +221,11 @@ export function SocialProvider({ children }: { children: React.ReactNode }) {
     };
     await setDoc(doc(db, "posts", id), newPost);
     await updateDoc(doc(db, "users", uid), { postsCount: increment(1) });
+  };
+
+  const updatePost = async (id: string, updates: Pick<Post, "content" | "visibility">) => {
+    await updateDoc(doc(db, "posts", id), updates);
+    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
   };
 
   const deletePost = async (id: string) => {
@@ -427,6 +433,7 @@ export function SocialProvider({ children }: { children: React.ReactNode }) {
         isLoaded,
         updateProfile,
         addPost,
+        updatePost,
         deletePost,
         toggleLike,
         createGroup,

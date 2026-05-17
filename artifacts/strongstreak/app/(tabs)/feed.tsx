@@ -107,6 +107,63 @@ function ReportModal({
   );
 }
 
+function EditPostModal({ post, visible, onClose }: { post: any; visible: boolean; onClose: () => void }) {
+  const colors = useColors();
+  const { updatePost } = useSocial();
+  const [caption, setCaption] = useState(post.content ?? "");
+  const [visibility, setVisibility] = useState<"public" | "private">(post.visibility ?? "public");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    await updatePost(post.id, { content: caption.trim(), visibility });
+    setSaving(false);
+    onClose();
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={[styles.editModal, { backgroundColor: colors.background }]}>
+        <View style={[styles.editModalHeader, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity onPress={onClose}><Text style={[styles.editModalCancel, { color: colors.mutedForeground }]}>Cancel</Text></TouchableOpacity>
+          <Text style={[styles.editModalTitle, { color: colors.foreground }]}>Edit Post</Text>
+          <TouchableOpacity onPress={handleSave} disabled={saving}>
+            <Text style={[styles.editModalSave, { color: colors.primary, opacity: saving ? 0.5 : 1 }]}>Save</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={{ padding: 20, gap: 16 }}>
+          <TextInput
+            style={[styles.editCaptionInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.card }]}
+            value={caption}
+            onChangeText={setCaption}
+            placeholder="Caption..."
+            placeholderTextColor={colors.mutedForeground}
+            multiline
+            maxLength={300}
+            autoFocus
+          />
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <TouchableOpacity
+              style={[styles.visBtn, { borderColor: visibility === "public" ? colors.primary : colors.border, backgroundColor: visibility === "public" ? colors.primary + "18" : "transparent" }]}
+              onPress={() => setVisibility("public")}
+            >
+              <Ionicons name="globe-outline" size={14} color={visibility === "public" ? colors.primary : colors.mutedForeground} />
+              <Text style={[styles.visBtnText, { color: visibility === "public" ? colors.primary : colors.mutedForeground }]}>Public</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.visBtn, { borderColor: visibility === "private" ? colors.primary : colors.border, backgroundColor: visibility === "private" ? colors.primary + "18" : "transparent" }]}
+              onPress={() => setVisibility("private")}
+            >
+              <Ionicons name="lock-closed-outline" size={14} color={visibility === "private" ? colors.primary : colors.mutedForeground} />
+              <Text style={[styles.visBtnText, { color: visibility === "private" ? colors.primary : colors.mutedForeground }]}>Followers only</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function PostCard({
   post,
   uid,
@@ -118,6 +175,7 @@ function PostCard({
 }) {
   const colors = useColors();
   const { toggleLike, deletePost } = useSocial();
+  const [editVisible, setEditVisible] = useState(false);
   const isLiked = post.likedBy.includes(uid);
   const isOwn = post.userId === uid;
 
@@ -126,10 +184,23 @@ function PostCard({
     toggleLike(post.id);
   };
 
+  const handleOwnPostMenu = () => {
+    Alert.alert("Post options", undefined, [
+      { text: "Edit", onPress: () => setEditVisible(true) },
+      { text: "Delete", style: "destructive", onPress: () => Alert.alert("Delete post", "Are you sure?", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => deletePost(post.id) },
+      ])},
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
+
   const timeAgo = formatDistanceToNow(new Date(post.createdAt), { addSuffix: true });
 
   return (
     <View style={[styles.postCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      {editVisible && <EditPostModal post={post} visible={editVisible} onClose={() => setEditVisible(false)} />}
+
       <View style={styles.postHeader}>
         <View style={styles.postUserInfo}>
           <Avatar name={post.userDisplayName} size={40} />
@@ -140,29 +211,18 @@ function PostCard({
               {post.visibility === "private" && (
                 <View style={[styles.privatePill, { backgroundColor: colors.muted }]}>
                   <Ionicons name="lock-closed" size={9} color={colors.mutedForeground} />
-                  <Text style={[styles.privatePillText, { color: colors.mutedForeground }]}>Only me</Text>
+                  <Text style={[styles.privatePillText, { color: colors.mutedForeground }]}>Followers</Text>
                 </View>
               )}
             </View>
           </View>
         </View>
         {isOwn ? (
-          <TouchableOpacity
-            onPress={() => {
-              Alert.alert("Delete post", "Are you sure?", [
-                { text: "Cancel", style: "cancel" },
-                { text: "Delete", style: "destructive", onPress: () => deletePost(post.id) },
-              ]);
-            }}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="trash-outline" size={16} color={colors.mutedForeground} />
+          <TouchableOpacity onPress={handleOwnPostMenu} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons name="ellipsis-horizontal" size={18} color={colors.mutedForeground} />
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity
-            onPress={() => onReport(post)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
+          <TouchableOpacity onPress={() => onReport(post)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons name="flag-outline" size={16} color={colors.mutedForeground} />
           </TouchableOpacity>
         )}
@@ -486,7 +546,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 28, fontWeight: "700", fontFamily: "Inter_700Bold", letterSpacing: -0.5 },
   composeBtn: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   feedContent: { paddingHorizontal: 16, paddingTop: 12 },
-  postCard: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 10 },
+  postCard: { borderRadius: 16, borderWidth: 1, padding: 16, gap: 10, overflow: "hidden" },
   postHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   postUserInfo: { flexDirection: "row", alignItems: "center", gap: 10 },
   avatar: { alignItems: "center", justifyContent: "center" },
@@ -502,7 +562,15 @@ const styles = StyleSheet.create({
   },
   workoutSummaryText: { fontSize: 12, fontWeight: "600", fontFamily: "Inter_600SemiBold" },
   postContent: { fontSize: 15, fontFamily: "Inter_400Regular", lineHeight: 22 },
-  postImage: { width: "100%", height: 220, borderRadius: 12 },
+  postImage: { width: "100%", height: 260, borderRadius: 0, marginHorizontal: -16 },
+  editModal: { flex: 1 },
+  editModalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+  editModalTitle: { fontSize: 16, fontWeight: "600" },
+  editModalCancel: { fontSize: 15 },
+  editModalSave: { fontSize: 15, fontWeight: "700" },
+  editCaptionInput: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 15, minHeight: 100, textAlignVertical: "top" },
+  visBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderWidth: 1, borderRadius: 10, paddingVertical: 9 },
+  visBtnText: { fontSize: 13, fontWeight: "500" },
   postActions: { flexDirection: "row", alignItems: "center" },
   likeBtn: { flexDirection: "row", alignItems: "center", gap: 5 },
   likeCount: { fontSize: 14, fontFamily: "Inter_500Medium" },
