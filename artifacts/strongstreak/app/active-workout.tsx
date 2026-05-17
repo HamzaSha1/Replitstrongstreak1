@@ -312,37 +312,64 @@ function ExerciseTimerWidget({ onRemove }: { onRemove: () => void }) {
 
 // ─── StreakCelebration ────────────────────────────────────────────────────────
 
-function StreakCelebration({ streak, onDone }: { streak: number; onDone: () => void }) {
-  const colors = useColors();
-  const scale = useRef(new Animated.Value(0.5)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+function StreakCelebration({ streak, prevStreak, onDone }: { streak: number; prevStreak: number; onDone: () => void }) {
+  const displayStreak = useRef(new Animated.Value(prevStreak)).current;
+  const scale = useRef(new Animated.Value(0)).current;
+  const flameScale = useRef(new Animated.Value(1)).current;
+  const [displayNum, setDisplayNum] = useState(prevStreak);
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 40, friction: 8 }),
-      Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-    ]).start();
+
+    // Pop in
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, tension: 50, friction: 7 }).start();
+
+    // Count up number
+    const steps = streak - prevStreak;
+    if (steps > 0) {
+      const stepDuration = 600 / steps;
+      let current = prevStreak;
+      const interval = setInterval(() => {
+        current += 1;
+        setDisplayNum(current);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (current >= streak) clearInterval(interval);
+      }, stepDuration);
+    }
+
+    // Flame pulse loop
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(flameScale, { toValue: 1.15, duration: 600, useNativeDriver: true }),
+        Animated.timing(flameScale, { toValue: 1, duration: 600, useNativeDriver: true }),
+      ])
+    ).start();
   }, []);
+
+  const getMessage = () => {
+    if (streak >= 365) return "One full year! Legendary. 🏆";
+    if (streak >= 100) return "100 days. Unstoppable. 💎";
+    if (streak >= 30) return "A full month. Habit locked in. 💪";
+    if (streak >= 21) return "21 days — it's a habit now. 🧠";
+    if (streak >= 14) return "Two weeks straight. 🎯";
+    if (streak >= 7) return "One week done. Keep going. 🔥";
+    if (streak >= 3) return "On a roll!";
+    return "Streak started. Don't break it!";
+  };
 
   return (
     <Modal visible transparent animationType="fade">
-      <Animated.View style={[styles.streakOverlay, { opacity }]}>
-        <Animated.View style={[styles.streakCard, { backgroundColor: colors.card, borderColor: colors.border, transform: [{ scale }] }]}>
-          <Text style={styles.streakEmoji}>🔥</Text>
-          <Text style={[styles.streakNumber, { color: colors.primary }]}>{streak}</Text>
-          <Text style={[styles.streakLabel, { color: colors.foreground }]}>Day Streak!</Text>
-          <Text style={[styles.streakSub, { color: colors.mutedForeground }]}>
-            Keep the momentum going. See you tomorrow!
-          </Text>
-          <TouchableOpacity
-            style={[styles.streakBtn, { backgroundColor: colors.primary }]}
-            onPress={onDone}
-          >
-            <Text style={[styles.streakBtnText, { color: colors.primaryForeground }]}>Continue</Text>
+      <View style={styles.streakOverlay}>
+        <Animated.View style={[styles.streakCard, { transform: [{ scale }] }]}>
+          <Animated.Text style={[styles.streakEmoji, { transform: [{ scale: flameScale }] }]}>🔥</Animated.Text>
+          <Text style={styles.streakNumber}>{displayNum}</Text>
+          <Text style={styles.streakLabel}>DAY STREAK</Text>
+          <Text style={styles.streakMessage}>{getMessage()}</Text>
+          <TouchableOpacity style={styles.streakBtn} onPress={onDone} activeOpacity={0.85}>
+            <Text style={styles.streakBtnText}>Continue</Text>
           </TouchableOpacity>
         </Animated.View>
-      </Animated.View>
+      </View>
     </Modal>
   );
 }
@@ -553,7 +580,7 @@ function EditExercisesModal({ exercises, onAdd, onRemove, onClose }: {
 
 // ─── SummaryModal ─────────────────────────────────────────────────────────────
 
-function SummaryModal({ visible, exercises, allSets, elapsed, shareOnFeed, notes, shareCaption, shareVisibility, onShareToggle, onNotesChange, onShareCaptionChange, onShareVisibilityChange, onFinish }: {
+function SummaryModal({ visible, exercises, allSets, elapsed, shareOnFeed, notes, shareCaption, shareVisibility, shareImage, onShareToggle, onNotesChange, onShareCaptionChange, onShareVisibilityChange, onShareImageChange, onFinish }: {
   visible: boolean;
   exercises: Exercise[];
   allSets: Record<string, LocalSet[]>;
@@ -562,10 +589,12 @@ function SummaryModal({ visible, exercises, allSets, elapsed, shareOnFeed, notes
   notes: string;
   shareCaption: string;
   shareVisibility: "public" | "private";
+  shareImage: string | null;
   onShareToggle: () => void;
   onNotesChange: (s: string) => void;
   onShareCaptionChange: (s: string) => void;
   onShareVisibilityChange: (v: "public" | "private") => void;
+  onShareImageChange: (uri: string | null) => void;
   onFinish: () => void;
 }) {
   const colors = useColors();
@@ -694,6 +723,28 @@ function SummaryModal({ visible, exercises, allSets, elapsed, shareOnFeed, notes
                   <Text style={[styles.visibilityLabel, { color: shareVisibility === "private" ? colors.primary : colors.mutedForeground }]}>Followers only</Text>
                 </TouchableOpacity>
               </View>
+
+              <Text style={[styles.notesLabel, { color: colors.mutedForeground, marginTop: 12 }]}>PHOTO</Text>
+              {shareImage ? (
+                <View style={styles.photoPreviewRow}>
+                  <Image source={{ uri: shareImage }} style={styles.photoPreview} />
+                  <TouchableOpacity onPress={() => onShareImageChange(null)} style={styles.photoRemoveBtn}>
+                    <Ionicons name="close-circle" size={22} color="#ef4444" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.photoPickerBtn, { borderColor: colors.border }]}
+                  onPress={async () => {
+                    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+                    if (!result.canceled && result.assets[0]) onShareImageChange(result.assets[0].uri);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="image-outline" size={18} color={colors.mutedForeground} />
+                  <Text style={[styles.visibilityLabel, { color: colors.mutedForeground }]}>Add a photo</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
@@ -1486,7 +1537,7 @@ export default function ActiveWorkoutScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { activeWorkout, workoutLogs, finishWorkout, cancelWorkout, weightUnit, streak } = useWorkout();
-  const { addPost } = useSocial();
+  const { addPost, uploadPostImage } = useSocial();
   const { elapsed, formatted } = useWorkoutTimer(!!activeWorkout?.isActive);
 
   const [localExercises, setLocalExercises] = useState<Exercise[]>([]);
@@ -1503,7 +1554,9 @@ export default function ActiveWorkoutScreen() {
   const [shareOnFeed, setShareOnFeed] = useState(true);
   const [shareCaption, setShareCaption] = useState("");
   const [shareVisibility, setShareVisibility] = useState<"public" | "private">("public");
+  const [shareImage, setShareImage] = useState<string | null>(null);
   const [showStreak, setShowStreak] = useState(false);
+  const prevStreakRef = useRef(streak);
   const [dragMode, setDragMode] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [isAnySwiping, setIsAnySwiping] = useState(false);
@@ -1773,6 +1826,8 @@ export default function ActiveWorkoutScreen() {
       if (note) builtExerciseNotes[ex.name] = note;
     });
 
+    prevStreakRef.current = streak;
+
     try {
       await finishWorkout(notes, builtSetLogs, builtExerciseNotes);
     } catch (err: any) {
@@ -1785,6 +1840,10 @@ export default function ActiveWorkoutScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     if (shareOnFeed) {
+      let imageUri: string | undefined;
+      if (shareImage) {
+        try { imageUri = await uploadPostImage(shareImage); } catch { /* skip image on error */ }
+      }
       await addPost({
         content: shareCaption.trim() || `Crushed ${activeWorkout.sessionType} day! ${Math.round(elapsed / 60)} min in the books 💪`,
         workoutSummary: {
@@ -1794,15 +1853,12 @@ export default function ActiveWorkoutScreen() {
           exerciseCount: localExercises.length,
         },
         visibility: shareVisibility,
+        imageUri,
       });
     }
 
     setShowSummary(false);
-    if (streak > 1) {
-      setShowStreak(true);
-    } else {
-      router.replace("/");
-    }
+    setShowStreak(true);
   };
 
   // ─── Render ─────────────────────────────────────────────────────────────────
@@ -1943,16 +1999,18 @@ export default function ActiveWorkoutScreen() {
         notes={notes}
         shareCaption={shareCaption}
         shareVisibility={shareVisibility}
+        shareImage={shareImage}
         onShareToggle={() => setShareOnFeed((v) => !v)}
         onNotesChange={setNotes}
         onShareCaptionChange={setShareCaption}
         onShareVisibilityChange={setShareVisibility}
+        onShareImageChange={setShareImage}
         onFinish={handleSummaryFinish}
       />
 
       {/* Streak celebration */}
       {showStreak && (
-        <StreakCelebration streak={streak} onDone={() => { setShowStreak(false); router.replace("/"); }} />
+        <StreakCelebration streak={streak} prevStreak={prevStreakRef.current} onDone={() => { setShowStreak(false); router.replace("/"); }} />
       )}
     </View>
     </TouchableWithoutFeedback>
@@ -1965,14 +2023,18 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
 
   // Streak celebration
-  streakOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.75)", alignItems: "center", justifyContent: "center" },
-  streakCard: { borderRadius: 28, borderWidth: 1, padding: 32, alignItems: "center", gap: 8, width: 280 },
-  streakEmoji: { fontSize: 64 },
-  streakNumber: { fontSize: 72, fontWeight: "700", fontFamily: "Inter_700Bold" },
-  streakLabel: { fontSize: 22, fontWeight: "700", fontFamily: "Inter_700Bold" },
-  streakSub: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", marginTop: 4 },
-  streakBtn: { marginTop: 16, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 40 },
-  streakBtnText: { fontSize: 16, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  streakOverlay: { flex: 1, backgroundColor: "#0a0a0a", alignItems: "center", justifyContent: "center" },
+  streakCard: { alignItems: "center", gap: 12, paddingHorizontal: 40 },
+  streakEmoji: { fontSize: 80 },
+  streakNumber: { fontSize: 96, fontWeight: "900", fontFamily: "Inter_700Bold", color: "#FF4500", lineHeight: 100 },
+  streakLabel: { fontSize: 20, fontWeight: "700", fontFamily: "Inter_700Bold", color: "#fff", letterSpacing: 3 },
+  streakMessage: { fontSize: 16, fontFamily: "Inter_400Regular", color: "#aaa", textAlign: "center", marginTop: 4 },
+  streakBtn: { marginTop: 32, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 56, backgroundColor: "#FF4500" },
+  streakBtnText: { fontSize: 17, fontWeight: "700", fontFamily: "Inter_700Bold", color: "#fff" },
+  photoPickerBtn: { flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderRadius: 10, borderStyle: "dashed", paddingVertical: 12, paddingHorizontal: 14, marginTop: 6 },
+  photoPreviewRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 6 },
+  photoPreview: { width: 80, height: 80, borderRadius: 10 },
+  photoRemoveBtn: { padding: 4 },
 
   // Header
   header: {
