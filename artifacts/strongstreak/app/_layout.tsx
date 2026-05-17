@@ -46,7 +46,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="auth/login" options={{ headerShown: false }} />
       <Stack.Screen name="auth/register" options={{ headerShown: false }} />
-      <Stack.Screen name="split-builder" options={{ headerShown: false, presentation: "fullScreenModal" }} />
+      <Stack.Screen name="split-builder" options={{ headerShown: false, presentation: "modal" }} />
       <Stack.Screen name="active-workout" options={{ headerShown: false }} />
       <Stack.Screen name="admin" options={{ headerShown: false, presentation: "fullScreenModal" }} />
       <Stack.Screen name="exercise-history" options={{ headerShown: false }} />
